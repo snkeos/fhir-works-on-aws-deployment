@@ -44,7 +44,7 @@ provider:
     FHIR_BINARY_BUCKET: !Ref FHIRBinaryBucket
     ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
     OAUTH2_DOMAIN_ENDPOINT:
-      !Join ['', ['https://', !Ref UserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+      !Join ['', ['https://', '3r91ob5cqe2vj81d8rir9f29r5', !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
     CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.6.0'
@@ -301,7 +301,7 @@ resources:
           ProviderARNs:
             - !Join [
                 '',
-                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref UserPool],
+                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', 'us-west-2_cDEIJcEfr'],
               ]
       FHIRBinaryBucket:
         Type: AWS::S3::Bucket
@@ -558,15 +558,15 @@ resources:
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
-  - ${file(cloudformation/cognito.yaml)}
+  #- ${file(cloudformation/cognito.yaml)}
   - ${file(cloudformation/bulkExport.yaml)}
   - Outputs:
       UserPoolId:
         Description: User pool id for the provisioning users.
-        Value: !Ref UserPool
+        Value: us-west-2_cDEIJcEfr
       UserPoolAppClientId:
         Description: App client id for the provisioning users.
-        Value: !Ref UserPoolClient
+        Value: 3r91ob5cqe2vj81d8rir9f29r5
       FHIRBinaryBucket:
         Description: S3 Bucket for storing Binary Objects
         Value: !Ref FHIRBinaryBucket
