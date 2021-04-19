@@ -15,6 +15,10 @@ custom:
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
+  extUserPoolId: ${opt:extUserPoolId, ""}
+  extUserPoolClientId: ${opt:extUserPoolClientId, ""}
+  extUserPoolDomain: ${opt:extUserPoolDomain, ""}
+
   bundle:
     externals:
       - fhir-works-on-aws-routing
@@ -28,7 +32,7 @@ custom:
 provider:
   name: aws
   region: us-west-2
-  stage: dev
+  stage: mario
   runtime: nodejs12.x
   memorySize: 512
   logRetentionInDays: 3653 # 10 years
@@ -44,8 +48,11 @@ provider:
     FHIR_BINARY_BUCKET: !Ref FHIRBinaryBucket
     ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
     OAUTH2_DOMAIN_ENDPOINT:
-      !Join ['', ['https://', '3r91ob5cqe2vj81d8rir9f29r5', !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
-    EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
+      !If 
+        - isUsingDefaultUserPool
+        - !Join ['', ['https://', !Ref UserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+        - !Join ['', ['https://', !Ref ExtUserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
     CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.6.0'
     VALIDATOR_LAMBDA_ALIAS:
@@ -201,10 +208,26 @@ resources:
           - 'true'
           - 'false'
         Description: whether or not to use an already deployed HAPI Validator
+
+
+      ExternalUserPoolId: 
+        Type: String
+        Default: ${self:custom.extUserPoolId}
+
+      ExtUserPoolClientId: 
+        Type: String
+        Default: ${self:custom.extUserPoolClientId}
+      
+      ExtUserPoolDomain: 
+        Type: String
+        Default: ${self:custom.extUserPoolDomain}
+
+
   - Conditions:
       isDev: !Equals [!Ref Stage, 'dev']
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
+      isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExternalUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
   - Resources:
       ResourceDynamoDBTableV2:
         Type: AWS::DynamoDB::Table
@@ -299,10 +322,17 @@ resources:
           Type: COGNITO_USER_POOLS
           Name: Authorizer
           ProviderARNs:
-            - !Join [
-                '',
-                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', 'us-west-2_cDEIJcEfr'],
-              ]
+            - !If 
+              - isUsingDefaultUserPool
+              - !Join [
+                  '',
+                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref UserPool],
+                ]
+              - !Join [
+                  '',
+                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref ExternalUserPoolId],
+                ]
+
       FHIRBinaryBucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Retain
@@ -555,18 +585,29 @@ resources:
           KmsKeyId: !GetAtt LogKMSKey.Arn
         DependsOn:
           - LogKMSKey
+          
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
-  #- ${file(cloudformation/cognito.yaml)}
+  - ${file(cloudformation/cognito.yaml)}
   - ${file(cloudformation/bulkExport.yaml)}
   - Outputs:
       UserPoolId:
         Description: User pool id for the provisioning users.
-        Value: us-west-2_cDEIJcEfr
+        Value: 
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPool
+            - !Ref ExternalUserPoolId
+
       UserPoolAppClientId:
         Description: App client id for the provisioning users.
-        Value: 3r91ob5cqe2vj81d8rir9f29r5
+        Value:
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPoolClient
+            - !Ref ExternalUserPoolClientId
+
       FHIRBinaryBucket:
         Description: S3 Bucket for storing Binary Objects
         Value: !Ref FHIRBinaryBucket

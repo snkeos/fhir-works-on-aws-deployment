@@ -19,7 +19,10 @@ function usage(){
     echo "Optional Parameters:"
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
-    echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
+    echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"    
+    echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
+    echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
+    echo "    --pooldomain (-d):Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -194,7 +197,9 @@ fi
 #Default values
 stage="dev"
 region="us-west-2"
-
+extUserPool=""
+extUserPoolClient=""
+extUserPoolDomain=""
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
@@ -203,6 +208,15 @@ while [ "$1" != "" ]; do
                             ;;
         -r | --region )     shift
                             region=$1
+                            ;;
+        -p | --pool )       shift
+                            extUserPool=$1
+                            ;;
+        -c | --poolclient ) shift
+                            extUserPoolClient=$1
+                            ;;
+        -d | --pooldomain ) shift
+                            extUserPoolDomain=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -270,7 +284,11 @@ fi
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
 echo "  Region: $region"
+echo "  External Userpool: $extUserPool"
+echo "  External Userpool Client: $extUserPoolClient"
+echo "  External Userpool Domain: $extUserPoolDomain"
 echo ""
+
 if ! `YesOrNo "Are these settings correct?"`; then
     echo ""
     usage
@@ -310,7 +328,7 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-serverless deploy --region $region --stage $stage || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClientId --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
