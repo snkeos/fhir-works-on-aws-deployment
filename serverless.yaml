@@ -210,7 +210,7 @@ resources:
         Description: whether or not to use an already deployed HAPI Validator
 
 
-      ExternalUserPoolId: 
+      ExtUserPoolId: 
         Type: String
         Default: ${self:custom.extUserPoolId}
 
@@ -227,7 +227,7 @@ resources:
       isDev: !Equals [!Ref Stage, 'dev']
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
-      isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExternalUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
+      isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExtUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
   - Resources:
       ResourceDynamoDBTableV2:
         Type: AWS::DynamoDB::Table
@@ -330,7 +330,7 @@ resources:
                 ]
               - !Join [
                   '',
-                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref ExternalUserPoolId],
+                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref ExtUserPoolId],
                 ]
 
       FHIRBinaryBucket:
@@ -598,7 +598,7 @@ resources:
           !If 
             - isUsingDefaultUserPool
             - !Ref UserPool
-            - !Ref ExternalUserPoolId
+            - !Ref ExtUserPoolId
 
       UserPoolAppClientId:
         Description: App client id for the provisioning users.
@@ -606,7 +606,7 @@ resources:
           !If 
             - isUsingDefaultUserPool
             - !Ref UserPoolClient
-            - !Ref ExternalUserPoolClientId
+            - !Ref ExtUserPoolClientId
 
       FHIRBinaryBucket:
         Description: S3 Bucket for storing Binary Objects

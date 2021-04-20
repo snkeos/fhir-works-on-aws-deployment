@@ -328,7 +328,7 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClientId --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
