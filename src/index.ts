@@ -19,6 +19,7 @@ const corsOptions: CorsOptions = {
     preflightContinue: false,
 };
 
+
 const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources, corsOptions), {
     request(request: any, event: any) {
         request.user = event.user;
