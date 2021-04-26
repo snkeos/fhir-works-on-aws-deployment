@@ -209,18 +209,18 @@ resources:
           - 'false'
         Description: whether or not to use an already deployed HAPI Validator
 
-
       ExtUserPoolId: 
         Type: String
         Default: ${self:custom.extUserPoolId}
-
+        Description: Sets the identifier of an external Cognito UserPool. 
       ExtUserPoolClientId: 
         Type: String
         Default: ${self:custom.extUserPoolClientId}
-      
+        Description: Sets the identifier of the client, which belongs to the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
       ExtUserPoolDomain: 
         Type: String
         Default: ${self:custom.extUserPoolDomain}
+        Description: Sets the domain of athe specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
 
 
   - Conditions:

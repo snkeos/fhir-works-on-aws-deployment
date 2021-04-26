@@ -231,6 +231,13 @@ clear
 
 command -v aws >/dev/null 2>&1 || { echo >&2 "AWS CLI cannot be found. Please install or check your PATH.  Aborting."; exit 1; }
 
+#Check whether the input parameters of the optional external user pool are set correctly and completely
+if ! { [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDomain" == "" ) || ("$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ) ]] ; }; then
+    echo "Invalid user pool input parameters. If external user pool shall be used, the following parameters (--pool, --poolclient and --pooldomain) must be set"
+    exit 1;
+fi
+
+
 if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     echo "Could not find any valid AWS credentials. You can configure credentials by running 'aws configure'. If running this script with sudo you must configure your awscli with 'sudo aws configure'"
     echo "For more information about configuring the AWS CLI see: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html"
