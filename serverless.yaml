@@ -32,7 +32,7 @@ custom:
 provider:
   name: aws
   region: us-west-2
-  stage: mario
+  stage: dev
   runtime: nodejs12.x
   memorySize: 512
   logRetentionInDays: 3653 # 10 years
