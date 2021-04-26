@@ -5,9 +5,21 @@
 
 import serverless from 'serverless-http';
 import { generateServerlessRouter } from 'fhir-works-on-aws-routing';
+import { CorsOptions } from 'cors';
 import { fhirConfig, genericResources } from './config';
 
-const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources), {
+const corsOptions: CorsOptions = {
+    origin: [
+        'http://localhost',
+        'https://cdn-fhir-forms-test.optimalcare.com/dwg-form',
+        'https://cdn-fhir-forms.optimalcare.com/dwg-form',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE'],
+    allowedHeaders: ['Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'],
+    preflightContinue: false,
+};
+
+const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources, corsOptions), {
     request(request: any, event: any) {
         request.user = event.user;
     },
