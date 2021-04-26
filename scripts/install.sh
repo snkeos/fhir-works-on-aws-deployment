@@ -237,7 +237,6 @@ if ! { [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDoma
     exit 1;
 fi
 
-
 if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     echo "Could not find any valid AWS credentials. You can configure credentials by running 'aws configure'. If running this script with sudo you must configure your awscli with 'sudo aws configure'"
     echo "For more information about configuring the AWS CLI see: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html"
@@ -335,7 +334,11 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]];  then
+    serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+else
+    serverless deploy --region $region --stage $stage || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+fi
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
