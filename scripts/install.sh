@@ -290,9 +290,13 @@ fi
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
 echo "  Region: $region"
-echo "  External Userpool: $extUserPool"
-echo "  External Userpool Client: $extUserPoolClient"
-echo "  External Userpool Domain: $extUserPoolDomain"
+if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]];  then
+    echo "  External Userpool: $extUserPool"
+    echo "  External Userpool Client: $extUserPoolClient"
+    echo "  External Userpool Domain: $extUserPoolDomain"
+else
+    echo "  Default User pool is created for AWS FHIR Works."
+fi
 echo ""
 
 if ! `YesOrNo "Are these settings correct?"`; then
