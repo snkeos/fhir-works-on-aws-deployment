@@ -19,10 +19,10 @@ function usage(){
     echo "Optional Parameters:"
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
-    echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"    
-    echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
-    echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
-    echo "    --pooldomain (-d):Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain needs to be set in order to embed an external user pool]"
+    echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
+    echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --pooldomain (-d):Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -200,6 +200,7 @@ region="us-west-2"
 extUserPool=""
 extUserPoolClient=""
 extUserPoolDomain=""
+hasExtUserPoolParameters=false
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
@@ -231,10 +232,13 @@ clear
 
 command -v aws >/dev/null 2>&1 || { echo >&2 "AWS CLI cannot be found. Please install or check your PATH.  Aborting."; exit 1; }
 
+if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]] ; then
+    hasExtUserPoolParameters=true
+fi
 #Check whether the input parameters of the optional external user pool are set correctly and completely
-if ! { [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDomain" == "" ) || ("$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ) ]] ; }; then
+if ! [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDomain" == "" ) || ($hasExtUserPoolParameters  == true ) ]] ;  then
     echo "Invalid user pool input parameters. If external user pool shall be used, the following parameters (--pool, --poolclient and --pooldomain) must be set"
-    exit 1;
+    exit 1
 fi
 
 if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
@@ -243,6 +247,7 @@ if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     echo ""
     exit 1;
 fi
+
 
 echo -e "\nFound AWS credentials for the following User/Role:\n"
 aws sts get-caller-identity
@@ -290,7 +295,7 @@ fi
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
 echo "  Region: $region"
-if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]];  then
+if [[ $hasExtUserPoolParameters  == true ]];  then
     echo "  External Userpool: $extUserPool"
     echo "  External Userpool Client: $extUserPoolClient"
     echo "  External Userpool Domain: $extUserPoolDomain"
@@ -338,11 +343,12 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]];  then
-    serverless deploy --region $region --stage $stage --extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ $hasExtUserPoolParameters  == true ]];  then
+    extUserPoolArgs=(--extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain)
 else
-    serverless deploy --region $region --stage $stage || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+    extUserPoolArgs=()
 fi
+serverless deploy --region $region --stage $stage "${extUserPoolArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
