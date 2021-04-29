@@ -11,6 +11,7 @@ custom:
   exportRequestTableName: 'export-request-${self:custom.stage}'
   exportRequestTableJobStatusIndex: 'jobStatus-index'
   stage: ${opt:stage, self:provider.stage}
+  stageType: ${opt:stageType, ""}
   region: ${opt:region, self:provider.region}
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
@@ -186,6 +187,10 @@ resources:
         Type: String
         Default: ${self:custom.stage}
         Description: 'The deployment stage (e.g. dev, qa, prod). Default: dev'
+      StageType:
+        Type: String
+        Default: ${self:custom.stageType}
+        Description: 'Specifies type of the deployment stage The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
@@ -224,7 +229,7 @@ resources:
 
 
   - Conditions:
-      isDev: !Equals [!Ref Stage, 'dev']
+      isDev: !Or [ !Equals [!Ref Stage, 'dev'], !Equals [ !Ref StageType, 'dev' ] ]
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
       isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExtUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
@@ -584,8 +589,7 @@ resources:
         Properties:
           KmsKeyId: !GetAtt LogKMSKey.Arn
         DependsOn:
-          - LogKMSKey
-          
+          - LogKMSKey     
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}

@@ -19,6 +19,7 @@ function usage(){
     echo "Optional Parameters:"
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
+    echo "    --stagetype (-t): Set the type of the deployment. Allowed values are: dev, prod (Default: 'dev')"
     echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
     echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
@@ -196,6 +197,7 @@ fi
 
 #Default values
 stage="dev"
+stageType=""
 region="us-west-2"
 extUserPool=""
 extUserPoolClient=""
@@ -207,6 +209,10 @@ while [ "$1" != "" ]; do
         -s | --stage )      shift
                             stage=$1
                             ;;
+        -t | --stagetype )  shift
+                            stageType=$1
+                            ;;
+
         -r | --region )     shift
                             region=$1
                             ;;
@@ -294,6 +300,11 @@ fi
 
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
+if [[ "$stageType" != "" ]]; then
+echo "  Stage type: $stageType"
+else
+echo "  No stage type was set."
+fi
 echo "  Region: $region"
 if [[ $hasExtUserPoolParameters  == true ]];  then
     echo "  External Userpool: $extUserPool"
@@ -348,12 +359,17 @@ if [[ $hasExtUserPoolParameters  == true ]];  then
 else
     extUserPoolArgs=()
 fi
-serverless deploy --region $region --stage $stage "${extUserPoolArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ "$stageType" != "" ]]; then
+    stageTypeArgs=(--stageType $stageType)
+else
+    stageTypeArgs=()
+fi
+serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
-serverless info --verbose --region $region --stage $stage && serverless info --verbose --region $region --stage $stage > Info_Output.yml
+serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" && serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" > Info_Output.yml
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
 
@@ -423,7 +439,7 @@ echo ""
 if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
     cd ${PACKAGE_ROOT}/auditLogMover
     yarn install
-    serverless deploy --region $region --stage $stage
+    serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}"
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
 fi
