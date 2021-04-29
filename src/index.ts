@@ -9,16 +9,11 @@ import { CorsOptions } from 'cors';
 import { fhirConfig, genericResources } from './config';
 
 const corsOptions: CorsOptions = {
-    origin: [
-        'http://localhost',
-        'https://cdn-fhir-forms-test.optimalcare.com/dwg-form',
-        'https://cdn-fhir-forms.optimalcare.com/dwg-form',
-    ],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE'],
     allowedHeaders: ['Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'],
     preflightContinue: false,
 };
-
 
 const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources, corsOptions), {
     request(request: any, event: any) {
