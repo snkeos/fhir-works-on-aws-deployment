@@ -48,11 +48,7 @@ provider:
     EXPORT_REQUEST_TABLE_JOB_STATUS_INDEX: '${self:custom.exportRequestTableJobStatusIndex}'
     FHIR_BINARY_BUCKET: !Ref FHIRBinaryBucket
     ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
-    OAUTH2_DOMAIN_ENDPOINT:
-      !If 
-        - isUsingDefaultUserPool
-        - !Join ['', ['https://', !Ref UserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
-        - !Join ['', ['https://', !Ref ExtUserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+    OAUTH2_DOMAIN_ENDPOINT: !Join ['', ['https://', !If [ isUsingDefaultUserPool, !Ref UserPoolDomain, !Ref ExtUserPoolDomain ], !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
     CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.6.0'
@@ -225,8 +221,7 @@ resources:
       ExtUserPoolDomain: 
         Type: String
         Default: ${self:custom.extUserPoolDomain}
-        Description: Sets the domain of athe specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
-
+        Description: Sets the domain of the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
 
   - Conditions:
       isDev: !Or [ !Equals [!Ref Stage, 'dev'], !Equals [ !Ref StageType, 'dev' ] ]
@@ -326,18 +321,11 @@ resources:
           RestApiId: !Ref ApiGatewayRestApi
           Type: COGNITO_USER_POOLS
           Name: Authorizer
-          ProviderARNs:
-            - !If 
-              - isUsingDefaultUserPool
-              - !Join [
-                  '',
-                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref UserPool],
-                ]
-              - !Join [
-                  '',
-                  [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref ExtUserPoolId],
-                ]
-
+          ProviderARNs: 
+            - !Join [
+                '',
+                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !If [ isUsingDefaultUserPool, !Ref UserPool, !Ref ExtUserPoolId ]],
+              ]
       FHIRBinaryBucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Retain
