@@ -19,7 +19,6 @@ custom:
   extUserPoolId: ${opt:extUserPoolId, ""}
   extUserPoolClientId: ${opt:extUserPoolClientId, ""}
   extUserPoolDomain: ${opt:extUserPoolDomain, ""}
-
   bundle:
     externals:
       - fhir-works-on-aws-routing
@@ -209,7 +208,6 @@ resources:
           - 'true'
           - 'false'
         Description: whether or not to use an already deployed HAPI Validator
-
       ExtUserPoolId: 
         Type: String
         Default: ${self:custom.extUserPoolId}
@@ -321,7 +319,7 @@ resources:
           RestApiId: !Ref ApiGatewayRestApi
           Type: COGNITO_USER_POOLS
           Name: Authorizer
-          ProviderARNs: 
+          ProviderARNs:
             - !Join [
                 '',
                 [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !If [ isUsingDefaultUserPool, !Ref UserPool, !Ref ExtUserPoolId ]],
@@ -577,7 +575,7 @@ resources:
         Properties:
           KmsKeyId: !GetAtt LogKMSKey.Arn
         DependsOn:
-          - LogKMSKey     
+          - LogKMSKey
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
