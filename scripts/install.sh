@@ -301,9 +301,9 @@ fi
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
 if [[ "$stageType" != "" ]]; then
-echo "  Stage type: $stageType"
+    echo "  Stage type: $stageType"
 else
-echo "  No stage type was set."
+    echo "  No stage type was set."
 fi
 echo "  Region: $region"
 if [[ $hasExtUserPoolParameters  == true ]];  then
