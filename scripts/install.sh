@@ -19,7 +19,11 @@ function usage(){
     echo "Optional Parameters:"
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
+    echo "    --stagetype (-t): Set the type of the deployment. Allowed values are: dev, prod (Default: 'dev')"
     echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
+    echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --pooldomain (-d):Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -180,16 +184,33 @@ fi
 
 #Default values
 stage="dev"
+stageType=""
 region="us-west-2"
-
+extUserPool=""
+extUserPoolClient=""
+extUserPoolDomain=""
+hasExtUserPoolParameters=false
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
         -s | --stage )      shift
                             stage=$1
                             ;;
+        -t | --stagetype )  shift
+                            stageType=$1
+                            ;;
+
         -r | --region )     shift
                             region=$1
+                            ;;
+        -p | --pool )       shift
+                            extUserPool=$1
+                            ;;
+        -c | --poolclient ) shift
+                            extUserPoolClient=$1
+                            ;;
+        -d | --pooldomain ) shift
+                            extUserPoolDomain=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -204,12 +225,22 @@ clear
 
 command -v aws >/dev/null 2>&1 || { echo >&2 "AWS CLI cannot be found. Please install or check your PATH.  Aborting."; exit 1; }
 
+if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]] ; then
+    hasExtUserPoolParameters=true
+fi
+#Check whether the input parameters of the optional external user pool are set correctly and completely
+if ! [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDomain" == "" ) || ($hasExtUserPoolParameters  == true ) ]] ;  then
+    echo "Invalid user pool input parameters. If external user pool shall be used, the following parameters (--pool, --poolclient and --pooldomain) must be set"
+    exit 1
+fi
+
 if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     echo "Could not find any valid AWS credentials. You can configure credentials by running 'aws configure'. If running this script with sudo you must configure your awscli with 'sudo aws configure'"
     echo "For more information about configuring the AWS CLI see: https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html"
     echo ""
     exit 1;
 fi
+
 
 echo -e "\nFound AWS credentials for the following User/Role:\n"
 aws sts get-caller-identity
@@ -256,8 +287,21 @@ fi
 
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
+if [[ "$stageType" != "" ]]; then
+    echo "  Stage type: $stageType"
+else
+    echo "  No stage type was set."
+fi
 echo "  Region: $region"
+if [[ $hasExtUserPoolParameters  == true ]];  then
+    echo "  External Userpool: $extUserPool"
+    echo "  External Userpool Client: $extUserPoolClient"
+    echo "  External Userpool Domain: $extUserPoolDomain"
+else
+    echo "  Default User pool is created for AWS FHIR Works."
+fi
 echo ""
+
 if ! `YesOrNo "Are these settings correct?"`; then
     echo ""
     usage
@@ -297,12 +341,25 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-yarn run serverless deploy --region $region --stage $stage || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+
+if [[ $hasExtUserPoolParameters  == true ]];  then
+    extUserPoolArgs=(--extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain)
+else
+    extUserPoolArgs=()
+fi
+if [[ "$stageType" != "" ]]; then
+    stageTypeArgs=(--stageType $stageType)
+else
+    stageTypeArgs=()
+fi
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage > Info_Output.yml
+
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" > Info_Output.yml
+
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
 
@@ -371,8 +428,10 @@ echo "You can also do this later manually, if you would prefer."
 echo ""
 if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
     cd ${PACKAGE_ROOT}/auditLogMover
+    
     yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage
+    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}"
+
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
 fi
