@@ -185,6 +185,9 @@ resources:
       StageType:
         Type: String
         Default: ${self:custom.stageType}
+        AllowedValues: 
+          - "dev"
+          - "prod"
         Description: 'Specifies type of the deployment stage The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
