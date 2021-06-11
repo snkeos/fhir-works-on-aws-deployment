@@ -10765,6 +10765,11 @@ serverless-offline@^5.12.1:
     update-notifier "^3.0.1"
     velocityjs "^1.1.5"
 
+serverless-plugin-ifelse@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/serverless-plugin-ifelse/-/serverless-plugin-ifelse-1.0.7.tgz#8f98f25731499fda94d2996c581ef0635ef71fba"
+  integrity sha512-9OzcpsKOT50dO6WsGM0AiDbsN9TjH8zg/pLVOJlDjliSulWpP6Q5ceqp5zTM3eY/aAlYTq1/UBElKby6V+vZiQ==
+
 serverless-step-functions@^2.27.1:
   version "2.30.0"
   resolved "https://registry.yarnpkg.com/serverless-step-functions/-/serverless-step-functions-2.30.0.tgz#57169d4f3744b223a6630a3d5918d96199d821e8"

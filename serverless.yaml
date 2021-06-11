@@ -23,6 +23,13 @@ custom:
   multiTenancyStrategy: ${opt:multiTenancyStrategy, 'None'}
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+  serverlessIfElse:
+      - If: '"${self:custom.multiTenancyStrategy}" == "UrlBased"'
+        Set:
+          functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.2.http.path: /{tenantId}/metadata
+        ElseExclude:
+          - functions.fhirServer.events.3 
   bundle:
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
@@ -62,10 +69,6 @@ provider:
     MULTI_TENANCY_STRATEGY: '${self:custom.multiTenancyStrategy}'
     MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
     MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
-#    MULTI_TENANCY_STRATEGY: 'UrlBased'
-#    MULTI_TENANCY_TOKEN_CLAIM: 'cognito:groups'
-#    MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: 'quentry:'
-
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -108,14 +111,15 @@ functions:
               - 'profile'
               - 'aws.cognito.signin.user.admin'
           method: ANY
-          path: '/{tenantId}/{proxy+}'
+          path: '{proxy+}'
           private: true
       - http:
           method: GET
           path: /metadata
       - http:
           method: GET
-          path: '/{tenantId}/metadata'
+          path: /metadata
+
     handler: src/index.default
     provisionedConcurrency: 5
     environment:
@@ -201,7 +205,7 @@ resources:
         AllowedValues: 
           - "dev"
           - "prod"
-        Description: 'Specifies type of the deployment stage The following values are allowed( dev, prod). Default: dev'
+        Description: 'Specifies type of the deployment stage. The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
@@ -738,4 +742,4 @@ plugins:
   - serverless-step-functions
   - serverless-bundle
   - serverless-offline
-  
+  - serverless-plugin-ifelse

@@ -69,6 +69,7 @@
     "serverless": "2.29.0",
     "serverless-bundle": "4.0.1",
     "serverless-offline": "^5.12.1",
+    "serverless-plugin-ifelse": "^1.0.7",
     "serverless-step-functions": "^2.27.1",
     "sinon": "^9.0.2",
     "tmp-promise": "^3.0.2",
