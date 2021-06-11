@@ -16,7 +16,7 @@ custom:
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  logLevel: ${opt.logLevel, 'debug'}
+  logLevel: ${opt.logLevel, 'error'}
   extUserPoolId: ${opt:extUserPoolId, ""}
   extUserPoolClientId: ${opt:extUserPoolClientId, ""}
   extUserPoolDomain: ${opt:extUserPoolDomain, ""}
@@ -62,6 +62,10 @@ provider:
     MULTI_TENANCY_STRATEGY: '${self:custom.multiTenancyStrategy}'
     MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
     MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
+#    MULTI_TENANCY_STRATEGY: 'UrlBased'
+#    MULTI_TENANCY_TOKEN_CLAIM: 'cognito:groups'
+#    MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: 'quentry:'
+
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -106,6 +110,9 @@ functions:
           method: ANY
           path: '/{tenantId}/{proxy+}'
           private: true
+      - http:
+          method: GET
+          path: /metadata
       - http:
           method: GET
           path: '/{tenantId}/metadata'
@@ -194,7 +201,7 @@ resources:
         AllowedValues: 
           - "dev"
           - "prod"
-        Description: 'Specifies type of the deployment stage. The following values are allowed( dev, prod). Default: dev'
+        Description: 'Specifies type of the deployment stage The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
