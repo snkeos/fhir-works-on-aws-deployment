@@ -58,6 +58,22 @@ const esSearch = new ElasticSearchService(
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion);
 
+const multiTenancyStrategy =
+    process.env.MULTI_TENANCY_STRATEGY === '[object Object]' || process.env.MULTI_TENANCY_STRATEGY === undefined
+        ? 'None'
+        : process.env.MULTI_TENANCY_STRATEGY;
+
+const multiTenancyTokenClaim =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM === '[object Object]' || process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM;
+
+const multiTenancyTokenValvePrefix =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === '[object Object]' ||
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX;
+
 const OAuthUrl =
     process.env.OAUTH2_DOMAIN_ENDPOINT === '[object Object]' || process.env.OAUTH2_DOMAIN_ENDPOINT === undefined
         ? 'https://OAUTH2.com'
@@ -88,6 +104,12 @@ export const fhirConfig: FhirConfig = {
             process.env.API_URL === '[object Object]' || process.env.API_URL === undefined
                 ? 'https://API_URL.com'
                 : process.env.API_URL,
+    },
+    tenancyOptions: {
+        stratedy: multiTenancyStrategy === 'UrlBased' ? 'UrlBased' : 'None',
+        accessControl: multiTenancyTokenClaim !== '' ? 'Token' : 'None',
+        tenantClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
+        tenantPrefix: multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
     },
     validators,
     profile: {

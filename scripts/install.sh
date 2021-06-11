@@ -23,7 +23,10 @@ function usage(){
     echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
     echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
-    echo "    --pooldomain (-d):Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --pooldomain (-d): Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --multiTenancyStrategy (-m): Set the strategy for multi tenancy shall be used (Default: 'None')"
+    echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -189,6 +192,9 @@ region="us-west-2"
 extUserPool=""
 extUserPoolClient=""
 extUserPoolDomain=""
+multiTenancyStrategy="None"
+multiTenancyTokenClaim="" 
+multiTenancyTokenClaimValuePrefix="" 
 hasExtUserPoolParameters=false
 #Parse commandline args
 while [ "$1" != "" ]; do
@@ -211,6 +217,15 @@ while [ "$1" != "" ]; do
                             ;;
         -d | --pooldomain ) shift
                             extUserPoolDomain=$1
+                            ;;
+        -m | --multiTenancyStrategy ) shift
+                            multiTenancyStrategy=$1
+                            ;;
+        -c | --multiTenancyTokenClaim ) shift
+                            multiTenancyTokenClaim=$1
+                            ;;
+        -v | --multiTenancyTokenClaimValuePrefix ) shift
+                            multiTenancyTokenClaimValuePrefix=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -300,6 +315,11 @@ if [[ $hasExtUserPoolParameters  == true ]];  then
 else
     echo "  Default User pool is created for AWS FHIR Works."
 fi
+echo "  Multi Tenancy Strategy: $multiTenancyStrategy"
+if [[ $multiTenancyStrategy  == 'UrlBased' ]];  then
+    echo "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
+    echo "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
+fi
 echo ""
 
 if ! `YesOrNo "Are these settings correct?"`; then
@@ -352,13 +372,28 @@ if [[ "$stageType" != "" ]]; then
 else
     stageTypeArgs=()
 fi
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+
+if [[ "$multiTenancyStrategy" != "" ]]; then
+    if [[ "$multiTenancyTokenClaim" != "" ]]; then
+        if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
+            multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy --multiTenancyTokenClaim $multiTenancyTokenClaim --multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
+        else
+            multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy --multiTenancyTokenClaim $multiTenancyTokenClaim)
+        fi
+    else
+        multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy)
+    fi
+else
+    multiTenancyArgs=()
+fi
+
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" > Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" > Info_Output.yml
 
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
