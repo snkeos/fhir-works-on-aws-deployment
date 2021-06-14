@@ -138,5 +138,22 @@ export const fhirConfig: FhirConfig = {
         },
     },
 };
+export function getCorsOrigins(): string[] | undefined {
+    const corsOrigins =
+        process.env.CORS_ORIGINS === '[object Object]' || process.env.CORS_ORIGINS === undefined
+            ? undefined
+            : process.env.CORS_ORIGINS;
 
+    if (corsOrigins !== undefined) {
+        const corsOptionsArray: string[] = corsOrigins.split(',');
+        corsOptionsArray.map(origin => {
+            if (origin === 'ALL_ORIGINS') {
+                return '*';
+            }
+            return origin.trim();
+        });
+        return corsOptionsArray;
+    }
+    return undefined;
+}
 export const genericResources = baseResources;

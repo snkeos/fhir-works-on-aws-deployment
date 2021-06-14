@@ -23,6 +23,7 @@ custom:
   multiTenancyStrategy: ${opt:multiTenancyStrategy, 'None'}
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+  corsOrigins: ${opt:corsOrigins, ""}
    # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
       - If: '"${self:custom.multiTenancyStrategy}" == "UrlBased"'
@@ -33,6 +34,17 @@ custom:
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
         ElseExclude:
           - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.multiTenancyStrategy}" == "UrlBased"'          
+        Set:
+          functions.fhirServer.events.4.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.5.http.path: /{tenantId}/metadata
+
+      - If: '"${self:custom.corsOrigins}" == ""'
+        Exclude:
+          - functions.fhirServer.events.3 
+          - functions.fhirServer.events.4
+          - functions.fhirServer.events.5 
   bundle:
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
@@ -72,6 +84,7 @@ provider:
     MULTI_TENANCY_STRATEGY: '${self:custom.multiTenancyStrategy}'
     MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
     MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
+    CORS_ORIGINS: '${self:custom.corsOrigins}' 
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -118,6 +131,15 @@ functions:
           private: true
       - http:
           method: GET
+          path: /metadata
+      - http:
+          method: OPTIONS
+          path: /
+      - http:
+          method: OPTIONS
+          path: '{proxy+}'
+      - http:
+          method: OPTIONS
           path: /metadata
     handler: src/index.default
     provisionedConcurrency: 5

@@ -27,6 +27,7 @@ function usage(){
     echo "    --multiTenancyStrategy (-m): Set the strategy for multi tenancy shall be used (Default: 'None')"
     echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -196,6 +197,7 @@ multiTenancyStrategy="None"
 multiTenancyTokenClaim="" 
 multiTenancyTokenClaimValuePrefix="" 
 hasExtUserPoolParameters=false
+corsOrigins=""
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
@@ -226,6 +228,9 @@ while [ "$1" != "" ]; do
                             ;;
         -v | --multiTenancyTokenClaimValuePrefix ) shift
                             multiTenancyTokenClaimValuePrefix=$1
+                            ;;
+        -o | --corsOrigins ) shift
+                            corsOrigins=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -320,6 +325,11 @@ if [[ $multiTenancyStrategy  == 'UrlBased' ]];  then
     echo "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
     echo "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
 fi
+if [[ $corsOrigins  != "" ]];  then
+    echo "  Cross-Origin Resource Sharing enabled for origins: $corsOrigins"
+else
+    echo "  Cross-Origin Resource Sharing disabled."
+fi
 echo ""
 
 if ! `YesOrNo "Are these settings correct?"`; then
@@ -387,13 +397,18 @@ else
     multiTenancyArgs=()
 fi
 
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ $corsOrigins  != "" ]];  then
+    corsOriginsArgs=(--corsOrigins $corsOrigins)
+else
+    corsOriginsArgs=()
+fi
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" > Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" > Info_Output.yml
 
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
@@ -465,7 +480,7 @@ if `YesOrNo "Would you like to set the server to archive logs older than 7 days?
     cd ${PACKAGE_ROOT}/auditLogMover
     
     yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}"
+    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}"
 
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
