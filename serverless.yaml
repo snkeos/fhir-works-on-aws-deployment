@@ -23,13 +23,16 @@ custom:
   multiTenancyStrategy: ${opt:multiTenancyStrategy, 'None'}
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
       - If: '"${self:custom.multiTenancyStrategy}" == "UrlBased"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodMetadataGet
         Set:
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
         ElseExclude:
-          - functions.fhirServer.events.3 
+          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
   bundle:
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
@@ -116,10 +119,6 @@ functions:
       - http:
           method: GET
           path: /metadata
-      - http:
-          method: GET
-          path: /metadata
-
     handler: src/index.default
     provisionedConcurrency: 5
     environment:
@@ -662,6 +661,12 @@ resources:
         DependsOn:
           - LogKMSKey
       ApiGatewayMethodMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+      ApiGatewayMethodTenantidVarMetadataGet:
         Metadata:
           cfn_nag:
             rules_to_suppress:
