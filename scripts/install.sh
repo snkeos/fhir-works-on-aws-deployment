@@ -28,6 +28,8 @@ function usage(){
     echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
+    echo "    --silentInstall (-i): Specifies whether to perform the installation silently or not, Allowed values are: yes, no  (Default: 'no')"
+
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -58,13 +60,13 @@ function install_dependencies(){
         # Identify kernel release
         KERNEL_RELEASE=$(uname -r)
         #Update package manager
-        sudo $PKG_MANAGER update
-        sudo $PKG_MANAGER upgrade
+        sudo $PKG_MANAGER update -y
+        sudo $PKG_MANAGER upgrade -y
 
         #Yarn depends on node version >= 12.0.0
         if [ "$basepkg" == "apt-get" ]; then
             curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-            sudo apt-get install nodejs -y
+            sudo apt-get --assume-yes install nodejs -y
         elif [ "$basepkg" == "yum" ]; then
             if [[ $KERNEL_RELEASE =~ amzn2.x86_64 ]]; then
                 curl -sL https://rpm.nodesource.com/setup_12.x | bash -
@@ -198,6 +200,7 @@ multiTenancyTokenClaim=""
 multiTenancyTokenClaimValuePrefix="" 
 hasExtUserPoolParameters=false
 corsOrigins=""
+silentInstall="no"
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
@@ -231,6 +234,9 @@ while [ "$1" != "" ]; do
                             ;;
         -o | --corsOrigins ) shift
                             corsOrigins=$1
+                            ;;
+        -i | --silentInstall ) shift
+                            silentInstall=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -266,10 +272,11 @@ echo -e "\nFound AWS credentials for the following User/Role:\n"
 aws sts get-caller-identity
 echo -e "\n"
 
-if ! `YesOrNo "Is this the correct User/Role for this deployment?"`; then
-  exit 1
+if [[ "$silentInstall" == "no" ]]; then
+    if ! `YesOrNo "Is this the correct User/Role for this deployment?"`; then
+    exit 1
+    fi
 fi
-
 #Check to make sure the server isn't already deployed
 already_deployed=false
 redep=`aws cloudformation describe-stacks --stack-name fhir-service-$stage --region $region --output text 2>&1` && already_deployed=true
@@ -283,25 +290,26 @@ if $already_deployed; then
         echo "FHIR Server already exists!"
         echo -e "Would you like to remove the current server and redeploy?\n"
     fi
-
-    if `YesOrNo "Do you want to continue with redeployment?"`; then
-        echo -e "\nOkay, let's redeploy the server.\n"
-    else
-        if ! $fail; then
-            eval $( parse_yaml Info_Output.yml )
-            echo -e "\n\nSetup completed successfully."
-            echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"
-            echo "For more information on setting up POSTMAN, please see the README file."
-            echo -e "All user details were stored in 'Info_Output.yml'.\n"
-            echo -e "You can obtain new Cognito authorization tokens by using the init-auth.py script.\n"
-            echo "Syntax: "
-            echo "AWS_ACCESS_KEY_ID=<ACCESS_KEY> AWS_SECRET_ACCESS_KEY=<SECRET-KEY> python3 scripts/init-auth.py <USER_POOL_APP_CLIENT_ID> <REGION>"
-            echo -e "\n\n"
-            echo "For the current User:"
-            echo "python3 scripts/init-auth.py $UserPoolAppClientId $region"
-            echo -e "\n"
+    if [[ "$silentInstall" == "no" ]]; then
+        if `YesOrNo "Do you want to continue with redeployment?"`; then
+            echo -e "\nOkay, let's redeploy the server.\n"
+        else
+            if ! $fail; then
+                eval $( parse_yaml Info_Output.yml )
+                echo -e "\n\nSetup completed successfully."
+                echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"
+                echo "For more information on setting up POSTMAN, please see the README file."
+                echo -e "All user details were stored in 'Info_Output.yml'.\n"
+                echo -e "You can obtain new Cognito authorization tokens by using the init-auth.py script.\n"
+                echo "Syntax: "
+                echo "AWS_ACCESS_KEY_ID=<ACCESS_KEY> AWS_SECRET_ACCESS_KEY=<SECRET-KEY> python3 scripts/init-auth.py <USER_POOL_APP_CLIENT_ID> <REGION>"
+                echo -e "\n\n"
+                echo "For the current User:"
+                echo "python3 scripts/init-auth.py $UserPoolAppClientId $region"
+                echo -e "\n"
+            fi
+            exit 1
         fi
-        exit 1
     fi
 fi
 
@@ -331,20 +339,23 @@ else
     echo "  Cross-Origin Resource Sharing disabled."
 fi
 echo ""
-
-if ! `YesOrNo "Are these settings correct?"`; then
-    echo ""
-    usage
-    exit 1
+if [[ "$silentInstall" == "no" ]]; then
+    if ! `YesOrNo "Are these settings correct?"`; then
+        echo ""
+        usage
+        exit 1
+    fi
 fi
 
 if [ "$DOCKER" != "true" ]; then
     echo -e "\nIn order to deploy the server, the following dependencies are required:"
     echo -e "\t- nodejs\n\t- npm\n\t- python3\n\t- yarn"
     echo -e "\nThese dependencies will be installed (if not already present)."
-    if ! `YesOrNo "Would you like to continue?"`; then
-        echo "Exiting..."
-        exit 1
+    if [[ "$silentInstall" == "no" ]]; then
+        if ! `YesOrNo "Would you like to continue?"`; then
+            echo "Exiting..."
+            exit 1
+        fi
     fi
 
     echo -e "\nInstalling dependencies...\n"
@@ -429,42 +440,44 @@ python3 provision-user.py "$UserPoolId" "$UserPoolAppClientId" "$region" >/dev/n
 echo -e "\n***\n\n"
 
 # #Set up Cognito user for Kibana server (only created if stage is dev)
-if [ $stage == 'dev' ]; then
-    echo "In order to be able to access the Kibana server for your ElasticSearch Service Instance, you need create a cognito user."
-    echo -e "You can set up a cognito user automatically through this install script, \nor you can do it manually via the Cognito console.\n"
-    while `YesOrNo "Do you want to set up a cognito user now?"`; do
-        echo ""
-        echo "Okay, we'll need to create a cognito user using an email address and password."
-        echo ""
-        read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
-        echo -e "\n"
-        if `YesOrNo "Is $cognitoUsername your correct email?"`; then
-            echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
-            echo "  * 8-20 characters long"
-            echo "  * at least 1 lowercase character"
-            echo "  * at least 1 uppercase character"
-            echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
-            echo "  * at least 1 number character"
+if [[ "$silentInstall" == "no" ]]; then
+    if [ $stage == 'dev' || stageType == 'dev']; then
+        echo "In order to be able to access the Kibana server for your ElasticSearch Service Instance, you need create a cognito user."
+        echo -e "You can set up a cognito user automatically through this install script, \nor you can do it manually via the Cognito console.\n"
+        while `YesOrNo "Do you want to set up a cognito user now?"`; do
             echo ""
-            temp_cognito_p=`get_valid_pass`
+            echo "Okay, we'll need to create a cognito user using an email address and password."
             echo ""
-            aws cognito-idp sign-up \
-              --region "$region" \
-              --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
-              --username "$cognitoUsername" \
-              --password "$temp_cognito_p" \
-              --user-attributes Name="email",Value="$cognitoUsername" &&
-            echo -e "\nSuccess: Created a cognito user.\n\n \
-                    You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
-                    You may have to verify your email address before logging in.\n \
-                    The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
-                    This URL will also be copied below:\n \
-                    $ElasticSearchDomainKibanaEndpoint"
-            break
-        else
-            echo -e "\nSorry about that--let's start over.\n"
-        fi
-    done
+            read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
+            echo -e "\n"
+            if `YesOrNo "Is $cognitoUsername your correct email?"`; then
+                echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
+                echo "  * 8-20 characters long"
+                echo "  * at least 1 lowercase character"
+                echo "  * at least 1 uppercase character"
+                echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
+                echo "  * at least 1 number character"
+                echo ""
+                temp_cognito_p=`get_valid_pass`
+                echo ""
+                aws cognito-idp sign-up \
+                --region "$region" \
+                --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
+                --username "$cognitoUsername" \
+                --password "$temp_cognito_p" \
+                --user-attributes Name="email",Value="$cognitoUsername" &&
+                echo -e "\nSuccess: Created a cognito user.\n\n \
+                        You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
+                        You may have to verify your email address before logging in.\n \
+                        The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
+                        This URL will also be copied below:\n \
+                        $ElasticSearchDomainKibanaEndpoint"
+                break
+            else
+                echo -e "\nSorry about that--let's start over.\n"
+            fi
+        done
+    fi
 fi
 cd ${PACKAGE_ROOT}
 ##Cloudwatch audit log mover
@@ -476,16 +489,18 @@ It also includes the Cognito user that made the request."
 echo -e "\nYou can also set up the server to archive logs older than 7 days into S3 and delete those logs from Cloudwatch Logs."
 echo "You can also do this later manually, if you would prefer."
 echo ""
-if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
-    cd ${PACKAGE_ROOT}/auditLogMover
-    
-    yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}"
 
-    cd ${PACKAGE_ROOT}
-    echo -e "\n\nSuccess."
+if [[ "$silentInstall" == "no" ]]; then
+    if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
+        cd ${PACKAGE_ROOT}/auditLogMover
+        
+        yarn install --frozen-lockfile
+        yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}"
+
+        cd ${PACKAGE_ROOT}
+        echo -e "\n\nSuccess."
+    fi
 fi
-
 
 #DynamoDB Table Backups
 echo -e "\n\nWould you like to set up daily DynamoDB Table backups?\n"
@@ -493,17 +508,18 @@ echo "Selecting 'yes' below will set up backups using the default setup from the
 echo -e "DynamoDB Table backups can also be set up later. See the README file for more information.\n"
 echo "Note: This will deploy an additional stack, and can lead to increased costs to run this server."
 echo ""
-if `YesOrNo "Would you like to set up backups now?"`; then
-    cd ${PACKAGE_ROOT}
-    aws cloudformation create-stack --stack-name fhir-server-backups \
-    --template-body file://cloudformation/backup.yaml \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --region $region
-    echo "DynamoDB Table backups are being deployed. Please validate status of CloudFormation stack"
-    echo "fhir-server-backups in ${region} region."
-    echo "Backups are configured to be automatically performed at 5:00 UTC, if deployment succeeded."
+if [[ "$silentInstall" == "no" ]]; then
+    if `YesOrNo "Would you like to set up backups now?"`; then
+        cd ${PACKAGE_ROOT}
+        aws cloudformation create-stack --stack-name fhir-server-backups \
+        --template-body file://cloudformation/backup.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --region $region
+        echo "DynamoDB Table backups are being deployed. Please validate status of CloudFormation stack"
+        echo "fhir-server-backups in ${region} region."
+        echo "Backups are configured to be automatically performed at 5:00 UTC, if deployment succeeded."
+    fi
 fi
-
 
 echo -e "\n\nSetup completed successfully."
 echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"
