@@ -12,12 +12,10 @@ phases:
         - npm install -g yarn
     build:
       commands:
-        - mkdir -p fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FWPERSISTENCEDDB/* ./fhir-works-on-aws-persistence-ddb && mv fhir-works-on-aws-persistence-ddb ../
+        - mkdir -p fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FhirWorksPersistenceDDB/* ./fhir-works-on-aws-persistence-ddb && mv fhir-works-on-aws-persistence-ddb ../
         - (cd ../fhir-works-on-aws-persistence-ddb && yarn install)
-        - mkdir -p fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FWROUTING/* ./fhir-works-on-aws-routing && mv fhir-works-on-aws-routing ../
+        - mkdir -p fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FhirWorksRouting/* ./fhir-works-on-aws-routing && mv fhir-works-on-aws-routing ../
         - (cd ../fhir-works-on-aws-routing && yarn install)
-        - mkdir -p fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWINTERFACE/* ./fhir-works-on-aws-interface && mv fhir-works-on-aws-interface ../
+        - mkdir -p fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FhirWorksInterface/* ./fhir-works-on-aws-interface && mv fhir-works-on-aws-interface ../
         - (cd ../fhir-works-on-aws-interface && yarn install)
-
         - yarn install
-        - (cd ./script && sudo ./install.sh --stage demo-cors-mt-idp --stagetype dev --region us-west-2 --pool us-west-2_BwjTcdPZY --poolclient plq1io4jmhdk54v8ugiq856lg --pooldomain demo-cog-domain --multiTenancyStrategy UrlBased --multiTenancyTokenClaim cognito:groups --multiTenancyTokenClaimValuePrefix quentry: --corsOrigins ALL_ORIGINS)
