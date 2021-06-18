@@ -283,8 +283,8 @@ resources:
               - id: W28
                 reason: 'We want to set the table explicit name'
         Type: AWS::DynamoDB::Table
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.resourceTableName}'
           AttributeDefinitions:
@@ -362,8 +362,8 @@ resources:
                 reason: 'We want to set the table explicit name'
               - id: W78
                 reason: 'Backup not explicitly needed'
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.oldResourceTableName}'
           AttributeDefinitions:

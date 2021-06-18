@@ -24,7 +24,7 @@ function usage(){
     echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --pooldomain (-d): Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
-    echo "    --multiTenancyStrategy (-m): Set the strategy for multi tenancy shall be used (Default: 'None')"
+    echo "    --multiTenancyStrategy (-m): Set the strategy for multi tenancy shall be used. Allowed values are: None, UrlBased (Default: 'None')"
     echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
