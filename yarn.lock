@@ -5659,18 +5659,9 @@ fhir-works-on-aws-interface@^9.0.0:
   version "0.0.0"
   uid ""
 
-fhir-works-on-aws-search-es@2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-search-es/-/fhir-works-on-aws-search-es-2.6.1.tgz#777efdfd215ce28220194055b5bf08f129324f49"
-  integrity sha512-fsbpSeQydC0KP3Xhbu1L3WyJQds6qvmKjBBUYjDudImrjAB+BMols8SqrI/PegEPozHabi8jfsoah/gLDOXyLA==
-  dependencies:
-    "@elastic/elasticsearch" "7"
-    aws-elasticsearch-connector "^8.2.0"
-    aws-sdk "^2.610.0"
-    date-fns "^2.19.0"
-    fhir-works-on-aws-interface "^9.0.0"
-    lodash "^4.17.20"
-    nearley "^2.20.0"
+"fhir-works-on-aws-search-es@link:../fhir-works-on-aws-search-es":
+  version "0.0.0"
+  uid ""
 
 figgy-pudding@^3.5.1:
   version "3.5.2"
