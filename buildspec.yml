@@ -3,12 +3,9 @@ version: 0.2
 phases:
     install:
       runtime-versions:
-        python: 3.8
         nodejs: 14
       commands:
         - env
-        - pip3 install --upgrade pip
-        - pip3 install --upgrade awscli
         - npm install -g yarn
     build:
       commands:
@@ -16,6 +13,8 @@ phases:
         - (cd ../fhir-works-on-aws-interface && yarn install)
         - mkdir -p fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FhirWorksRouting/* ./fhir-works-on-aws-routing && mv fhir-works-on-aws-routing ../
         - (cd ../fhir-works-on-aws-routing && yarn install)
+        - mkdir -p fhir-works-on-aws-search-es && cp -r $CODEBUILD_SRC_DIR_FhirWorksSearchES/* ./fhir-works-on-aws-search-es && mv fhir-works-on-aws-search-es ../
+        - (cd ../fhir-works-on-aws-search-es && yarn install)
         - mkdir -p fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FhirWorksPersistenceDDB/* ./fhir-works-on-aws-persistence-ddb && mv fhir-works-on-aws-persistence-ddb ../
         - (cd ../fhir-works-on-aws-persistence-ddb && yarn install)
         - yarn install
