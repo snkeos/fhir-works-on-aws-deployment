@@ -28,8 +28,8 @@ function usage(){
     echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
+    echo "    --useApiKeys (-k): Specifies whether to enable api keys or not. Allowed values are: yes, no (Default: 'yes')"
     echo "    --silentInstall (-i): Specifies whether to perform the installation silently or not, Allowed values are: yes, no  (Default: 'no')"
-
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -222,6 +222,7 @@ multiTenancyTokenClaimValuePrefix=""
 hasExtUserPoolParameters=false
 corsOrigins=""
 silentInstall="no"
+useApiKeys="yes"
 #Parse commandline args
 while [ "$1" != "" ]; do
     case $1 in
@@ -259,6 +260,10 @@ while [ "$1" != "" ]; do
         -i | --silentInstall ) shift
                             silentInstall=$1
                             ;;
+        -k | --useApiKeys ) shift
+                            useApiKeys=$1
+                            ;;
+
         -h | --help )       usage
                             exit
                             ;;
@@ -267,6 +272,12 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+if [[ ${useApiKeys,,}  == "yes" ]];  then
+apiKeysEnabled="true"
+else
+apiKeysEnabled="false"
+fi
 
 if [[ $stage == 'dev' || $stageType == 'dev' ]] ; then
 isProd="no"
@@ -360,6 +371,13 @@ if [[ $corsOrigins  != "" ]];  then
 else
     echo "  Cross-Origin Resource Sharing disabled."
 fi
+
+if [[ $apiKeysEnabled  == "true" ]];  then
+    echo "  API Keys are enabled. "
+else
+    echo "  API Keys are disabled."
+fi
+
 echo ""
 
 if ! `YesOrNoSilentDefault "$silentInstall" "yes" "Are these settings correct?"`; then
@@ -432,13 +450,16 @@ if [[ $corsOrigins  != "" ]];  then
 else
     corsOriginsArgs=()
 fi
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+
+useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
+
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" > Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" > Info_Output.yml
 
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
@@ -513,7 +534,7 @@ if `YesOrNoSilentDefault "$silentInstall" "$isProd" "Would you like to set the s
     cd ${PACKAGE_ROOT}/auditLogMover
         
     yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}"
+    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}"
 
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."

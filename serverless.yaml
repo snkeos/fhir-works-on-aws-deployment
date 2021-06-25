@@ -16,7 +16,7 @@ custom:
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  logLevel: ${opt.logLevel, 'error'}
+  logLevel: ${opt.logLevel, 'info'}
   extUserPoolId: ${opt:extUserPoolId, ""}
   extUserPoolClientId: ${opt:extUserPoolClientId, ""}
   extUserPoolDomain: ${opt:extUserPoolDomain, ""}
@@ -24,6 +24,7 @@ custom:
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
   corsOrigins: ${opt:corsOrigins, ""}
+  useApiKeys: ${opt:useApiKeys, "true"}
    # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
       - If: '"${self:custom.multiTenancyStrategy}" == "UrlBased"'
@@ -45,6 +46,15 @@ custom:
           - functions.fhirServer.events.3 
           - functions.fhirServer.events.4
           - functions.fhirServer.events.5 
+
+      - If: '"${self:custom.useApiKeys}" == "false"'
+        Exclude:
+          - provider.apiKeys
+        Set:
+          functions.fhirServer.events.0.http.private: false
+          functions.fhirServer.events.1.http.private: false
+          functions.fhirServer.events.2.http.private: false
+
   bundle:
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
