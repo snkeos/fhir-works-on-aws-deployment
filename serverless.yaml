@@ -16,13 +16,46 @@ custom:
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  logLevel: ${opt.logLevel, 'error'}
+  logLevel: ${opt.logLevel, 'info'}
   extUserPoolId: ${opt:extUserPoolId, ""}
   extUserPoolClientId: ${opt:extUserPoolClientId, ""}
   extUserPoolDomain: ${opt:extUserPoolDomain, ""}
+  multiTenancyStrategy: ${opt:multiTenancyStrategy, 'None'}
+  multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
+  multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+  corsOrigins: ${opt:corsOrigins, ""}
+  useApiKeys: ${opt:useApiKeys, "true"}
+   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
+  serverlessIfElse:
+      - If: '"${self:custom.multiTenancyStrategy}" == "UrlBased"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodMetadataGet
+        Set:
+          functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.2.http.path: /{tenantId}/metadata
+        ElseExclude:
+          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.multiTenancyStrategy}" == "UrlBased"'          
+        Set:
+          functions.fhirServer.events.4.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.5.http.path: /{tenantId}/metadata
+
+      - If: '"${self:custom.corsOrigins}" == ""'
+        Exclude:
+          - functions.fhirServer.events.3 
+          - functions.fhirServer.events.4
+          - functions.fhirServer.events.5 
+
+      - If: '"${self:custom.useApiKeys}" == "false"'
+        Exclude:
+          - provider.apiKeys
+        Set:
+          functions.fhirServer.events.0.http.private: false
+          functions.fhirServer.events.1.http.private: false
+          functions.fhirServer.events.2.http.private: false
+
   bundle:
-    externals:
-      - fhir-works-on-aws-routing
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
       - from: 'bulkExport/glueScripts/export-script.py'
@@ -58,6 +91,10 @@ provider:
         - Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
         - !Ref AWS::NoValue
     LOG_LEVEL: '${self:custom.logLevel}'
+    MULTI_TENANCY_STRATEGY: '${self:custom.multiTenancyStrategy}'
+    MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
+    MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
+    CORS_ORIGINS: '${self:custom.corsOrigins}' 
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -104,6 +141,15 @@ functions:
           private: true
       - http:
           method: GET
+          path: /metadata
+      - http:
+          method: OPTIONS
+          path: /
+      - http:
+          method: OPTIONS
+          path: '{proxy+}'
+      - http:
+          method: OPTIONS
           path: /metadata
     handler: src/index.default
     provisionedConcurrency: 5
@@ -190,7 +236,7 @@ resources:
         AllowedValues: 
           - "dev"
           - "prod"
-        Description: 'Specifies type of the deployment stage The following values are allowed( dev, prod). Default: dev'
+        Description: 'Specifies type of the deployment stage. The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
@@ -247,8 +293,8 @@ resources:
               - id: W28
                 reason: 'We want to set the table explicit name'
         Type: AWS::DynamoDB::Table
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.resourceTableName}'
           AttributeDefinitions:
@@ -326,8 +372,8 @@ resources:
                 reason: 'We want to set the table explicit name'
               - id: W78
                 reason: 'Backup not explicitly needed'
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.oldResourceTableName}'
           AttributeDefinitions:
@@ -652,6 +698,12 @@ resources:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+      ApiGatewayMethodTenantidVarMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
 
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
@@ -727,4 +779,4 @@ plugins:
   - serverless-step-functions
   - serverless-bundle
   - serverless-offline
-  
+  - serverless-plugin-ifelse

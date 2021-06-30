@@ -5,9 +5,21 @@
 
 import serverless from 'serverless-http';
 import { generateServerlessRouter } from 'fhir-works-on-aws-routing';
-import { fhirConfig, genericResources } from './config';
+import { CorsOptions } from 'cors';
+import { fhirConfig, genericResources, getCorsOrigins } from './config';
 
-const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources), {
+const corsOrigins = getCorsOrigins();
+
+const corsOptions: CorsOptions | undefined = corsOrigins
+    ? {
+          origin: corsOrigins, // '*',
+          methods: ['GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE'],
+          allowedHeaders: ['Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'],
+          preflightContinue: false,
+      }
+    : undefined;
+
+const serverlessHandler = serverless(generateServerlessRouter(fhirConfig, genericResources, corsOptions), {
     request(request: any, event: any) {
         request.user = event.user;
     },

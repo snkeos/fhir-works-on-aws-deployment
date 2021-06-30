@@ -58,6 +58,22 @@ const esSearch = new ElasticSearchService(
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion);
 
+const multiTenancyStrategy =
+    process.env.MULTI_TENANCY_STRATEGY === '[object Object]' || process.env.MULTI_TENANCY_STRATEGY === undefined
+        ? 'None'
+        : process.env.MULTI_TENANCY_STRATEGY;
+
+const multiTenancyTokenClaim =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM === '[object Object]' || process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM;
+
+const multiTenancyTokenValvePrefix =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === '[object Object]' ||
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX;
+
 const OAuthUrl =
     process.env.OAUTH2_DOMAIN_ENDPOINT === '[object Object]' || process.env.OAUTH2_DOMAIN_ENDPOINT === undefined
         ? 'https://OAUTH2.com'
@@ -89,6 +105,12 @@ export const fhirConfig: FhirConfig = {
                 ? 'https://API_URL.com'
                 : process.env.API_URL,
     },
+    tenancyOptions: {
+        stratedy: multiTenancyStrategy === 'UrlBased' ? 'UrlBased' : 'None',
+        accessControl: multiTenancyTokenClaim !== '' ? 'Token' : 'None',
+        tenantClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
+        tenantPrefix: multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
+    },
     validators,
     profile: {
         systemOperations: ['transaction'],
@@ -116,5 +138,40 @@ export const fhirConfig: FhirConfig = {
         },
     },
 };
+
+export function getCorsOrigins(): string | string[] | undefined {
+    const corsOrigins =
+        process.env.CORS_ORIGINS === '[object Object]' || process.env.CORS_ORIGINS === undefined
+            ? undefined
+            : process.env.CORS_ORIGINS;
+
+    // Check, if there are any cors origins set
+    if (corsOrigins !== undefined) {
+        const corsOriginsArray: string[] = corsOrigins.split(',');
+        let cleanCorsOriginsArray: string[] = [];
+
+        // Skip empty array elements, trim whitespaces and transform ALL_ORIGINS to *
+        corsOriginsArray.every(origin => {
+            const cleanedOrigin = origin.trim();
+            if (cleanedOrigin.toUpperCase() === 'ALL_ORIGINS') {
+                cleanCorsOriginsArray = [];
+                cleanCorsOriginsArray.push('*');
+                return false;
+            }
+            if (cleanedOrigin.length !== 0) {
+                cleanCorsOriginsArray.push(cleanedOrigin);
+            }
+            return true;
+        });
+
+        // If there is only a sinple entry, just return the string itself
+        if (cleanCorsOriginsArray.length === 1) {
+            return cleanCorsOriginsArray[0];
+        }
+
+        return cleanCorsOriginsArray;
+    }
+    return undefined;
+}
 
 export const genericResources = baseResources;
