@@ -304,7 +304,6 @@ if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     exit 1;
 fi
 
-
 echo -e "\nFound AWS credentials for the following User/Role:\n"
 aws sts get-caller-identity
 echo -e "\n"
