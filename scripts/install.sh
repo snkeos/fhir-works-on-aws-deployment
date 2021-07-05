@@ -11,6 +11,11 @@
 #   -What if someone doesn't have AWS CLI installed?
 #   -What if nothing is entered in aws configure?
 
+if [ "${BASH_VERSINFO:-0}" -lt 4 ] ; then
+  echo "Minimal bash version to run this script is 4. Current version is $BASH_VERSINFO"
+  exit 1
+fi;
+
 ##Usage information
 function usage(){
     echo ""
