@@ -273,7 +273,7 @@ while [ "$1" != "" ]; do
     shift
 done
 
-if [[ ${useApiKeys,,}  == "yes" ]];  then
+if [[ $useApiKeys == "yes" ]];  then
 apiKeysEnabled="true"
 else
 apiKeysEnabled="false"
@@ -371,7 +371,7 @@ else
     echo "  Cross-Origin Resource Sharing disabled."
 fi
 
-if [[ $apiKeysEnabled  == "true" ]];  then
+if [[ $apiKeysEnabled == "true" ]];  then
     echo "  API Keys are enabled. "
 else
     echo "  API Keys are disabled."
