@@ -1,0 +1,13 @@
+version: 0.2
+
+phases:
+    install:
+      runtime-versions:
+        python: 3.8
+      commands:
+        - env
+        - pip3 install --upgrade pip
+        - pip3 install --upgrade awscli
+    build:
+      commands:
+        - sudo ./install.sh --silentInstall yes --stage $STACK_NAME-fhirwork --stagetype dev --region $REGION --pool $POOL --poolclient $POOL_CLIENT --pooldomain $POOL_DOMAIN --multiTenancyStrategy UrlBased --multiTenancyTokenClaim cognito:groups --corsOrigins ALL_ORIGINS --useApiKeys no --multiTenancyTokenClaimValuePrefix quentry:
