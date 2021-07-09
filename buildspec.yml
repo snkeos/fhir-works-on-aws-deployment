@@ -9,18 +9,24 @@ phases:
         - npm install -g yarn
     build:
       commands:
-        - mkdir -p fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWInt/* ./fhir-works-on-aws-interface && mv fhir-works-on-aws-interface ../
-        - (cd ../fhir-works-on-aws-interface && yarn install)
-        - mkdir -p fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FWRout/* ./fhir-works-on-aws-routing && mv fhir-works-on-aws-routing ../
-        - (cd ../fhir-works-on-aws-routing && yarn install)
-        - mkdir -p fhir-works-on-aws-search-es && cp -r $CODEBUILD_SRC_DIR_FWSES/* ./fhir-works-on-aws-search-es && mv fhir-works-on-aws-search-es ../
-        - (cd ../fhir-works-on-aws-search-es && yarn install)
-        - mkdir -p fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FWPDDB/* ./fhir-works-on-aws-persistence-ddb && mv fhir-works-on-aws-persistence-ddb ../
-        - (cd ../fhir-works-on-aws-persistence-ddb && yarn install)
-        - yarn install
-        # AWS doesn't like symlinks, move everything in order to prepare for packing
-        - (cd node-modules && rm -vf fhir-works-on-aws-interface fhir-works-on-aws-routing fhir-works-on-aws-search-es fhir-works-on-aws-persistence-ddb)
-        - mv -v ../fhir-works-on-aws-interface node-modules/ && mv -v ../fhir-works-on-aws-routing node-modules/ && mv -v ../fhir-works-on-aws-search-es node-modules/ && mv -v ../fhir-works-on-aws-persistence-ddb node-modules/
+        # AWS doesn't like symlinks, so we have to go around this
+        - PACKAGE=fhirworks
+        - mkdir $PACKAGE
+
+        - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
+
+        - mkdir -p $PACKAGE/fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWInt/* $PACKAGE/fhir-works-on-aws-interface
+        - (cd $PACKAGE/fhir-works-on-aws-interface && yarn install)
+        - mkdir -p $PACKAGE/fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FWRout/* $PACKAGE/fhir-works-on-aws-routing
+        - (cd $PACKAGE/fhir-works-on-aws-routing && yarn install)
+        - mkdir -p $PACKAGE/fhir-works-on-aws-search-es && cp -r $CODEBUILD_SRC_DIR_FWSES/* $PACKAGE/fhir-works-on-aws-search-es
+        - (cd $PACKAGE/fhir-works-on-aws-search-es && yarn install)
+        - mkdir -p $PACKAGE/fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FWPDDB/* $PACKAGE/fhir-works-on-aws-persistence-ddb
+        - (cd $PACKAGE/fhir-works-on-aws-persistence-ddb && yarn install)
+
+        - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
+        - tar -cvzf fhirworks.tgz $PACKAGE
+
 artifacts:
   files:
-    - '**/*'
+    - 'fhirworks.tgz'
