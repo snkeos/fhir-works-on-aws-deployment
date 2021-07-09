@@ -3,9 +3,11 @@ version: 0.2
 phases:
     install:
       runtime-versions:
+        nodejs: 14
         python: 3.8
       commands:
         - env
+        - npm install -g yarn
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscli
     build:
