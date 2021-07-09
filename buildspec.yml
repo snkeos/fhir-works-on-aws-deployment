@@ -18,6 +18,9 @@ phases:
         - mkdir -p fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FWPDDB/* ./fhir-works-on-aws-persistence-ddb && mv fhir-works-on-aws-persistence-ddb ../
         - (cd ../fhir-works-on-aws-persistence-ddb && yarn install)
         - yarn install
+        # AWS doesn't like symlinks, move everything in order to prepare for packing
+        - (cd node-modules && rm -vf fhir-works-on-aws-interface fhir-works-on-aws-routing fhir-works-on-aws-search-es fhir-works-on-aws-persistence-ddb)
+        - mv -v ../fhir-works-on-aws-interface node-modules/ && mv -v ../fhir-works-on-aws-routing node-modules/ && mv -v ../fhir-works-on-aws-search-es node-modules/ && mv -v ../fhir-works-on-aws-persistence-ddb node-modules/
 artifacts:
   files:
     - '**/*'
