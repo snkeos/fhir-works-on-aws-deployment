@@ -10,9 +10,9 @@ phases:
     build:
       commands:
         # AWS doesn't like symlinks, so we have to go around this
-        - PACKAGE=fhirworks
-        - mkdir $PACKAGE
+        - PACKAGE=../fhirworks
 
+        - mkdir $PACKAGE
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
 
         - mkdir -p $PACKAGE/fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWInt/* $PACKAGE/fhir-works-on-aws-interface
