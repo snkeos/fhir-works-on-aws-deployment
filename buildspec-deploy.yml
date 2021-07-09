@@ -12,4 +12,6 @@ phases:
         - pip3 install --upgrade awscli
     build:
       commands:
+        - ls -al
+        - (cd node_modules && ls -al)
         - (cd scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
