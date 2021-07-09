@@ -30,3 +30,4 @@ phases:
 artifacts:
   files:
     - 'fhirworks.tgz'
+    - 'buildspec-deploy.yml'
