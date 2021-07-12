@@ -17,8 +17,8 @@ phases:
         - tar -xzf fhirworks.tgz
         - ( cd $CODEBUILD_SRC_DIR_DepCog && cat cognito-deploy-output.json )
         - ( cd $CODEBUILD_SRC_DIR_DepCogIDP && cat cognito-idp-deploy-output.json )
-        - POOL=$(cd $CODEBUILD_SRC_DIR_DepCog && jq '.CloudDataHubUserPoolId' cognito-deploy-output.json) && echo "POOL= $POOL"
-        - POOL_CLIENT=$(cd $CODEBUILD_SRC_DIR_DepCogIDP && jq '.CloudDataHubUserPoolClientId' cognito-idp-deploy-output.json) && echo "POOL_CLIENT= $POOL_CLIENT"
+        - POOL=$(cd $CODEBUILD_SRC_DIR_DepCog && jq -r '.CloudDataHubUserPoolId' cognito-deploy-output.json) && echo "POOL= $POOL"
+        - POOL_CLIENT=$(cd $CODEBUILD_SRC_DIR_DepCogIDP && jq -r '.CloudDataHubUserPoolClientId' cognito-idp-deploy-output.json) && echo "POOL_CLIENT= $POOL_CLIENT"
         - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
         - |
