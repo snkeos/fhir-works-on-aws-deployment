@@ -15,11 +15,15 @@ phases:
       commands:
         - ls -al
         - tar -xzf fhirworks.tgz
-        - (cd $CODEBUILD_SRC_DIR_DepCog && ls -al)
-        - (cd $CODEBUILD_SRC_DIR_DepCogIDP && ls -al)
+        - cat $CODEBUILD_SRC_DIR_DepCog\cognito-deploy-output.json
+        - cat $CODEBUILD_SRC_DIR_DepCogIDP\cognito-idp-deploy-output.json
+        - POOL=$(jq '.CloudDataHubUserPoolId' $CODEBUILD_SRC_DIR_DepCog\cognito-deploy-output.json) && echo "POOL= $POOL"
+        - POOL_CLIENT=$(jq '.CloudDataHubUserPoolClientId' $CODEBUILD_SRC_DIR_DepCogIDP\cognito-idp-deploy-output.json) && echo "POOL_CLIENT= $POOL_CLIENT"
+        - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
         - |
-          echo "{ \"test\": \"ttt\" }" > template-export.yml
+          echo "{ \"test\": \"ttt\" }" > fw-deploy-output.json
 artifacts:
   files:
-    - template-export.yml
+    - Info_Output.yml
+    - fw-deploy-output.json
