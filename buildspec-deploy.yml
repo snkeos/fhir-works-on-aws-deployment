@@ -22,7 +22,7 @@ phases:
         - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
         - |
-          echo "{ \"test\": \"ttt\" }" > fw-deploy-output.json
+          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
 artifacts:
   files:
     - Info_Output.yml
