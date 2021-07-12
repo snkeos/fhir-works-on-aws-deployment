@@ -10,8 +10,11 @@ phases:
         - npm install -g yarn
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscli
+        - apt install jq -y
     build:
       commands:
         - ls -al
         - tar -xzf fhirworks.tgz
+        - (cd $CODEBUILD_SRC_DIR_DepCog && ls -al)
+        - (cd $CODEBUILD_SRC_DIR_DepCogIDP && ls -al)
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
