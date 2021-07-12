@@ -21,9 +21,12 @@ phases:
         - POOL_CLIENT=$(cd $CODEBUILD_SRC_DIR_DepCogIDP && jq -r '.CloudDataHubUserPoolClientId' cognito-idp-deploy-output.json) && echo "POOL_CLIENT= $POOL_CLIENT"
         - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
+        - ls -al fhirworks/fhir-works-on-aws-deployment
+        - ls -al fhirworks/fhir-works-on-aws-deployment/scripts
+        - ls -al
         - |
-          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
+          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/scripts/Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
 artifacts:
   files:
-    - Info_Output.yml
+    - fhirworks/fhir-works-on-aws-deployment/scripts/Info_Output.yml
     - fw-deploy-output.json
