@@ -10,6 +10,7 @@ phases:
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscli
         - apt install jq -y
+        - wget https://github.com/mikefarah/yq/releases/download/v4.10.0/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
     build:
       commands:
         - ls -al
@@ -20,8 +21,9 @@ phases:
         - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT= $POOL_CLIENT"
         - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
+        - SERVICE_ENDPOINT=$(yq e ".ServiceEndpoint" fhirworks/fhir-works-on-aws-deployment/Info_Output.yml) && echo "SERVICE_ENDPOINT= $SERVICE_ENDPOINT"
         - |
-          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
+          echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
 artifacts:
   files:
     - fhirworks/fhir-works-on-aws-deployment/Info_Output.yml
