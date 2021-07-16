@@ -21,7 +21,8 @@ phases:
         - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT= $POOL_CLIENT"
         - echo "POOL_DOMAIN= $POOL_DOMAIN"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyStrategy "UrlBased" --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
-        - SERVICE_ENDPOINT=$(yq e ".ServiceEndpoint" fhirworks/fhir-works-on-aws-deployment/Info_Output.yml) && echo "SERVICE_ENDPOINT= $SERVICE_ENDPOINT"
+        - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml"
+        - SERVICE_ENDPOINT=$(yq e ".ServiceEndpoint" "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml") && echo "SERVICE_ENDPOINT= $SERVICE_ENDPOINT"
         - |
           echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
 artifacts:
