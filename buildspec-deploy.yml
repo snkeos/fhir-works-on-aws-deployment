@@ -9,7 +9,7 @@ phases:
         - npm install -g yarn
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscli
-        - apt install jq -y
+        - apt install jq wget -y
         - wget https://github.com/mikefarah/yq/releases/download/v4.10.0/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
     build:
       commands:
