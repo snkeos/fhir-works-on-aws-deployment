@@ -459,14 +459,10 @@ useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
 
 yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
-## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" > Info_Output.yml
-
-#The double call to serverless info was a bugfix from Steven Johnston
-    #(may not be needed)
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.yml
 
 #Read in variables from Info_Output.yml
 eval $( parse_yaml Info_Output.yml )
@@ -485,7 +481,7 @@ echo -e "\n***\n\n"
 
 # #Set up Cognito user for Kibana server (only created if stage is dev)
 if [[ "$silentInstall" == "no" ]]; then
-    if [ $stage == 'dev' || $stageType == 'dev']; then
+    if [[ $stage == 'dev' || $stageType == 'dev' ]]; then
         echo "In order to be able to access the Kibana server for your ElasticSearch Service Instance, you need create a cognito user."
         echo -e "You can set up a cognito user automatically through this install script, \nor you can do it manually via the Cognito console.\n"
         while `YesOrNo "Do you want to set up a cognito user now?"`; do
