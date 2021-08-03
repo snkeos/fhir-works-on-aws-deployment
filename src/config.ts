@@ -25,7 +25,10 @@ import HapiFhirLambdaValidator from 'fhir-works-on-aws-routing/lib/router/valida
 import RBACRules from './RBACRules';
 import { loadImplementationGuides } from './implementationGuides/loadCompiledIGs';
 
-const { IS_OFFLINE } = process.env;
+const { IS_OFFLINE, ENABLE_MULTI_TENANCY, MULTI_TENANCY_USE_TENANT_URL } = process.env;
+
+const enableMultiTenancy = ENABLE_MULTI_TENANCY === 'true';
+const useMultiTenancyTenantUrl = MULTI_TENANCY_USE_TENANT_URL === 'true';
 
 const fhirVersion: FhirVersion = '4.0.1';
 const baseResources = fhirVersion === '4.0.1' ? BASE_R4_RESOURCES : BASE_STU3_RESOURCES;
@@ -61,6 +64,17 @@ const esSearch = new ElasticSearchService(
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion);
 
+const multiTenancyTokenClaim =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM === '[object Object]' || process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM;
+
+const multiTenancyTokenValvePrefix =
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === '[object Object]' ||
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === undefined
+        ? ''
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX;
+
 const OAuthUrl =
     process.env.OAUTH2_DOMAIN_ENDPOINT === '[object Object]' || process.env.OAUTH2_DOMAIN_ENDPOINT === undefined
         ? 'https://OAUTH2.com'
@@ -91,6 +105,13 @@ export const fhirConfig: FhirConfig = {
             process.env.API_URL === '[object Object]' || process.env.API_URL === undefined
                 ? 'https://API_URL.com'
                 : process.env.API_URL,
+    },
+    multiTenancyOptions: {
+        enabled: enableMultiTenancy,
+        tenantUrlPart: useMultiTenancyTenantUrl ? 'tenant' : undefined,
+        tenantAccessTokenClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
+        tenantAccessTokenClaimValuePrefix:
+            multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
     },
     validators,
     profile: {

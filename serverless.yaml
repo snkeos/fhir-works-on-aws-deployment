@@ -16,9 +16,35 @@ custom:
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
   logLevel: ${opt.logLevel, 'error'}
+  useMultiTenancy: ${opt:useMultiTenancy, 'false'}
+  useMultiTenancyTenantSubUrl: ${opt:useMultiTenancyTenantSubUrl, 'false'}
+  multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
+  multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+  # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
+  serverlessIfElse:
+      - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodMetadataGet
+          - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+        Set:
+          functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.2.http.path: /{tenantId}/metadata
+           
+      - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodMetadataGet
+          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+        Set:
+          functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
+    
+      - IF: '"${self:custom.useMultiTenancy}" == "false"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+          - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
   bundle:
-    externals:
-      - fhir-works-on-aws-routing
+    #externals:
+    #  - fhir-works-on-aws-routing
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
       - from: 'bulkExport/glueScripts/export-script.py'
@@ -55,6 +81,10 @@ provider:
         - Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
         - !Ref AWS::NoValue
     LOG_LEVEL: '${self:custom.logLevel}'
+    ENABLE_MULTI_TENANCY: '${self:custom.useMultiTenancy}'
+    MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
+    MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
+    MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -628,7 +658,19 @@ resources:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
-
+      ApiGatewayMethodTenantidVarMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+      ApiGatewayMethodTenantTenantidVarMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+              
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
@@ -698,3 +740,4 @@ plugins:
   - serverless-step-functions
   - serverless-bundle
   - serverless-offline
+  - serverless-plugin-ifelse
