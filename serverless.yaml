@@ -28,6 +28,11 @@ custom:
   useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
+      #- IF: '"${self:custom.useMultiTenancy}" == "false"'
+      #  Exclude:
+      #    - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+      #    - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -35,7 +40,9 @@ custom:
         Set:
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
-           
+        ElseExclude:
+            - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -43,11 +50,8 @@ custom:
         Set:
           functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
-    
-      - IF: '"${self:custom.useMultiTenancy}" == "false"'
-        Exclude:
-          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
-          - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+        ElseExclude:
+            - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
 
       - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'          
         Set:
@@ -722,6 +726,13 @@ resources:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+      ApiGatewayMethodTenantTenantidVarMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+
 
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
