@@ -29,7 +29,9 @@ custom:
         Set:
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
-           
+        ElseExclude:
+          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -37,10 +39,7 @@ custom:
         Set:
           functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
-    
-      - IF: '"${self:custom.useMultiTenancy}" == "false"'
-        Exclude:
-          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+        ElseExclude:
           - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
   bundle:
     #externals:
