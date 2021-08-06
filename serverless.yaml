@@ -113,7 +113,7 @@ provider:
         - Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
         - !Ref AWS::NoValue
     LOG_LEVEL: '${self:custom.logLevel}'
-    MULTI_TENANCY_STRATEGY: '${self:custom.useMultiTenancy}'
+    ENABLE_MULTI_TENANCY: '${self:custom.useMultiTenancy}'
     MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
     MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
     MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
