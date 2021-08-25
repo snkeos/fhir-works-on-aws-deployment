@@ -25,7 +25,10 @@ import HapiFhirLambdaValidator from 'fhir-works-on-aws-routing/lib/router/valida
 import RBACRules from './RBACRules';
 import { loadImplementationGuides } from './implementationGuides/loadCompiledIGs';
 
-const { IS_OFFLINE } = process.env;
+const { IS_OFFLINE, ENABLE_MULTI_TENANCY, MULTI_TENANCY_USE_TENANT_URL } = process.env;
+
+const enableMultiTenancy = ENABLE_MULTI_TENANCY === 'true';
+const useMultiTenancyTenantUrl = MULTI_TENANCY_USE_TENANT_URL === 'true';
 
 const fhirVersion: FhirVersion = '4.0.1';
 const baseResources = fhirVersion === '4.0.1' ? BASE_R4_RESOURCES : BASE_STU3_RESOURCES;
@@ -35,9 +38,12 @@ const dynamoDbBundleService = new DynamoDbBundleService(DynamoDb);
 
 // Configure the input validators. Validators run in the order that they appear on the array. Use an empty array to disable input validation.
 const validators: Validator[] = [];
-if (process.env.VALIDATOR_LAMBDA_ALIAS) {
+if (process.env.VALIDATOR_LAMBDA_ALIAS && process.env.VALIDATOR_LAMBDA_ALIAS !== '[object Object]') {
     // The HAPI FHIR Validator must be deployed separately. It is the recommended choice when using implementation guides.
     validators.push(new HapiFhirLambdaValidator(process.env.VALIDATOR_LAMBDA_ALIAS));
+} else if (process.env.OFFLINE_VALIDATOR_LAMBDA_ALIAS) {
+    // Allows user to run sls offline with custom provided HAPI Lambda
+    validators.push(new HapiFhirLambdaValidator(process.env.OFFLINE_VALIDATOR_LAMBDA_ALIAS));
 } else {
     // The JSON Schema Validator is simpler and is a good choice for testing the FHIR server with minimal configuration.
     validators.push(new JsonSchemaValidator(fhirVersion));
@@ -57,11 +63,6 @@ const esSearch = new ElasticSearchService(
     loadImplementationGuides('fhir-works-on-aws-search-es'),
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion);
-
-const multiTenancyStrategy =
-    process.env.MULTI_TENANCY_STRATEGY === '[object Object]' || process.env.MULTI_TENANCY_STRATEGY === undefined
-        ? 'None'
-        : process.env.MULTI_TENANCY_STRATEGY;
 
 const multiTenancyTokenClaim =
     process.env.MULTI_TENANCY_TOKEN_CLAIM === '[object Object]' || process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined
@@ -105,11 +106,12 @@ export const fhirConfig: FhirConfig = {
                 ? 'https://API_URL.com'
                 : process.env.API_URL,
     },
-    tenancyOptions: {
-        stratedy: multiTenancyStrategy === 'UrlBased' ? 'UrlBased' : 'None',
-        accessControl: multiTenancyTokenClaim !== '' ? 'Token' : 'None',
-        tenantClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
-        tenantPrefix: multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
+    multiTenancyOptions: {
+        enabled: enableMultiTenancy,
+        tenantUrlPart: useMultiTenancyTenantUrl ? 'tenant' : undefined,
+        tenantAccessTokenClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
+        tenantAccessTokenClaimValuePrefix:
+            multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
     },
     validators,
     profile: {

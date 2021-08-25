@@ -29,9 +29,10 @@ function usage(){
     echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --pooldomain (-d): Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
-    echo "    --multiTenancyStrategy (-m): Set the strategy for multi tenancy shall be used. Allowed values are: None, UrlBased (Default: 'None')"
-    echo "    --multiTenancyTokenClaim (-c): Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
-    echo "    --multiTenancyTokenClaimValuePrefix (-v): If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    echo "    --multiTenancyEnabled: If set multi tenancy is enabled."
+    echo "    --multiTenancyTenantSubUrlEnabled: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
+    echo "    --multiTenancyTokenClaim: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    echo "    --multiTenancyTokenClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
     echo "    --useApiKeys (-k): Specifies whether to enable api keys or not. Allowed values are: yes, no (Default: 'yes')"
     echo "    --silentInstall (-i): Specifies whether to perform the installation silently or not, Allowed values are: yes, no  (Default: 'no')"
@@ -221,7 +222,8 @@ region="us-west-2"
 extUserPool=""
 extUserPoolClient=""
 extUserPoolDomain=""
-multiTenancyStrategy="None"
+multiTenancyEnabled=false
+multiTenancyTenantSubUrlEnabled=false
 multiTenancyTokenClaim="" 
 multiTenancyTokenClaimValuePrefix="" 
 hasExtUserPoolParameters=false
@@ -250,8 +252,11 @@ while [ "$1" != "" ]; do
         -d | --pooldomain ) shift
                             extUserPoolDomain=$1
                             ;;
-        -m | --multiTenancyStrategy ) shift
-                            multiTenancyStrategy=$1
+        --multiTenancyEnabled )
+                            multiTenancyEnabled=true
+                            ;;
+        --multiTenancyTenantSubUrlEnabled ) 
+                            multiTenancyTenantSubUrlEnabled=true
                             ;;
         -c | --multiTenancyTokenClaim ) shift
                             multiTenancyTokenClaim=$1
@@ -365,8 +370,9 @@ if [[ $hasExtUserPoolParameters  == true ]];  then
 else
     echo "  Default User pool is created for AWS FHIR Works."
 fi
-echo "  Multi Tenancy Strategy: $multiTenancyStrategy"
-if [[ $multiTenancyStrategy  == 'UrlBased' ]];  then
+echo "  Multi Tenancy Enabled: $multiTenancyEnabled"
+if [[ $multiTenancyEnabled  == 'true' ]];  then
+    echo "  Multi Tenancy Tenant Type SubUrl Enabled: $multiTenancyTenantSubUrlEnabled"
     echo "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
     echo "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
 fi
@@ -435,18 +441,26 @@ else
     stageTypeArgs=()
 fi
 
-if [[ "$multiTenancyStrategy" != "" ]]; then
-    if [[ "$multiTenancyTokenClaim" != "" ]]; then
-        if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
-            multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy --multiTenancyTokenClaim $multiTenancyTokenClaim --multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
-        else
-            multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy --multiTenancyTokenClaim $multiTenancyTokenClaim)
-        fi
+if [[ $multiTenancyEnabled == true ]]; then
+    mtEnabledArgs=(--useMultiTenancy "true")
+else
+    mtEnabledArgs=()
+fi
+
+if [[ $multiTenancyEnabled == true && "$multiTenancyTokenClaim" != "" ]]; then
+    if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
+        mtTokenArgs=(--multiTenancyTokenClaim $multiTenancyTokenClaim --multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
     else
-        multiTenancyArgs=(--multiTenancyStrategy $multiTenancyStrategy)
+        mtTokenArgs=(--multiTenancyTokenClaim $multiTenancyTokenClaim)
     fi
 else
-    multiTenancyArgs=()
+    mtTokenArgs=()
+fi
+
+if [[ $multiTenancyEnabled == true && $multiTenancyTenantSubUrlEnabled == true ]]; then
+    mtTenantTypeSubUrlArgs=(--useMultiTenancyTenantSubUrl true)
+else
+    mtTenantTypeSubUrlArgs=()
 fi
 
 if [[ $corsOrigins  != "" ]];  then
@@ -457,12 +471,12 @@ fi
 
 useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
 
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.yml
 
 #Read in variables from Info_Output.yml
 eval $( parse_yaml Info_Output.yml )
@@ -534,7 +548,7 @@ if `YesOrNoSilentDefault "$silentInstall" "$isProd" "Would you like to set the s
     cd ${PACKAGE_ROOT}/auditLogMover
         
     yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${multiTenancyArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}"
+    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}"
 
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
