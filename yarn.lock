@@ -959,9 +959,9 @@
     kuler "^2.0.0"
 
 "@elastic/elasticsearch@7", "@elastic/elasticsearch@^7.4":
-  version "7.14.0"
-  resolved "https://registry.yarnpkg.com/@elastic/elasticsearch/-/elasticsearch-7.14.0.tgz#250d939c2dee41f92282ca8916b0eb11bca61094"
-  integrity sha512-BlxqykcNtdBxo0mF7UQ1OsUxoVOOnEaeF70u2N4jpePih9paCOOotTWfFSDrtEw0TWv1CZlzCGD3TD5+8ASx8A==
+  version "7.13.0"
+  resolved "https://registry.yarnpkg.com/@elastic/elasticsearch/-/elasticsearch-7.13.0.tgz#6dcf511dfa91187e22c81e54f41f4bd0fd96b4d6"
+  integrity sha512-WgwLWo2p9P2tdqzBGX9fHeG8p5IOTXprXNTECQG2mJ7z9n93N5AFBJpEw4d35tWWeCWi9jI13A2wzQZH7XZ/xw==
   dependencies:
     debug "^4.3.1"
     hpagent "^0.1.1"
@@ -1603,9 +1603,9 @@
     shortid "^2.2.14"
 
 "@serverless/components@^3.7.2":
-  version "3.15.1"
-  resolved "https://registry.yarnpkg.com/@serverless/components/-/components-3.15.1.tgz#96a2b12681a74c491b953632006a4fc2afcd1d76"
-  integrity sha512-NTwRE6mc6GUOiN586/ikTxXYF0S7Hd8hc01LGEPYCeOelUxNHCBt7vjuSLxIkSM06RTkjEYGrZgkrkqX5KkirQ==
+  version "3.16.0"
+  resolved "https://registry.yarnpkg.com/@serverless/components/-/components-3.16.0.tgz#a161481f73ffa9e1d62c447b3d8b6bacbf701ba6"
+  integrity sha512-vgsfR0V4dierB97GKgtfFp/s5XN3zmEQlhRfshWLHjoXvJe2HvWOZXy5Bqyzb1WMr6S0dp/wXQzcnVStbiyBaw==
   dependencies:
     "@serverless/platform-client" "^4.2.2"
     "@serverless/platform-client-china" "^2.2.0"
@@ -2036,6 +2036,11 @@
   version "7.0.9"
   resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.9.tgz#97edc9037ea0c38585320b28964dde3b39e4660d"
   integrity sha512-qcUXuemtEu+E5wZSJHNxUXeCZhAfXKQ41D+duX+VYPde7xyEVZci+/oXKJL13tnRs9lR2pr4fod59GT6/X1/yQ==
+
+"@types/json5@^0.0.29":
+  version "0.0.29"
+  resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
+  integrity sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
 
 "@types/keyv@*":
   version "3.1.2"
@@ -2839,9 +2844,9 @@ aws-elasticsearch-connector@^8.2.0:
     lodash.get "^4.4.2"
 
 aws-sdk@^2.610.0, aws-sdk@^2.785.0, aws-sdk@^2.856.0, aws-sdk@^2.859.0:
-  version "2.974.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.974.0.tgz#4380e4746b2a799e3833a0ab021f3292b045ac63"
-  integrity sha512-/oNslIqWT8f9MKgl4jMS+B/M0pIPjWYsXC+DeiFKSH6xMAaVDURr+Qtze5FqEz13mMroO5PDQKfHaC/Z/yoZ3w==
+  version "2.975.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.975.0.tgz#0adc8126fd5cd48ea70bf7741fe7ef2e88ad17be"
+  integrity sha512-cmRcM+gU+rfW1RZjca3bdbRTQV6WHuCI6NuqnDgd5HoqufylCrNI/wtysPK1IMJLsAhrcsY0U0YRx+Y/hxQNoQ==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -3302,7 +3307,7 @@ browserify-zlib@^0.2.0:
   dependencies:
     pako "~1.0.5"
 
-browserslist@^4.16.6, browserslist@^4.16.7:
+browserslist@^4.16.6, browserslist@^4.16.8:
   version "4.16.8"
   resolved "https://registry.yarnpkg.com/browserslist/-/browserslist-4.16.8.tgz#cb868b0b554f137ba6e33de0ecff2eda403c4fb0"
   integrity sha512-sc2m9ohR/49sWEbPj14ZSSZqp+kbi16aLao42Hmn3Z8FpjuMaq2xCA2l4zl9ITfyzvnvyE0hcg62YkIGKxgaNQ==
@@ -4099,17 +4104,17 @@ copy-webpack-plugin@^6.1.0:
     webpack-sources "^1.4.3"
 
 core-js-compat@^3.14.0, core-js-compat@^3.16.0:
-  version "3.16.2"
-  resolved "https://registry.yarnpkg.com/core-js-compat/-/core-js-compat-3.16.2.tgz#442ef1d933ca6fc80859bd5a1db7a3ba716aaf56"
-  integrity sha512-4lUshXtBXsdmp8cDWh6KKiHUg40AjiuPD3bOWkNVsr1xkAhpUqCjaZ8lB1bKx9Gb5fXcbRbFJ4f4qpRIRTuJqQ==
+  version "3.16.3"
+  resolved "https://registry.yarnpkg.com/core-js-compat/-/core-js-compat-3.16.3.tgz#ae12a6e20505a1d79fbd16b6689dfc77fc989114"
+  integrity sha512-A/OtSfSJQKLAFRVd4V0m6Sep9lPdjD8bpN8v3tCCGwE0Tmh0hOiVDm9tw6mXmWOKOSZIyr3EkywPo84cJjGvIQ==
   dependencies:
-    browserslist "^4.16.7"
+    browserslist "^4.16.8"
     semver "7.0.0"
 
 core-js@^3.1.4:
-  version "3.16.2"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.16.2.tgz#3f485822889c7fc48ef463e35be5cc2a4a01a1f4"
-  integrity sha512-P0KPukO6OjMpjBtHSceAZEWlDD1M2Cpzpg6dBbrjFqFhBHe/BwhxaP820xKOjRn/lZRQirrCusIpLS/n2sgXLQ==
+  version "3.16.3"
+  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.16.3.tgz#1f2d43c51a9ed014cc6c83440af14697ae4b75f2"
+  integrity sha512-lM3GftxzHNtPNUJg0v4pC2RC6puwMd6VZA7vXUczi+SKmCWSf4JwO89VJGMqbzmB7jlK7B5hr3S64PqwFL49cA==
 
 core-util-is@1.0.2, core-util-is@~1.0.0:
   version "1.0.2"
@@ -4714,9 +4719,9 @@ ee-first@1.1.1:
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
 electron-to-chromium@^1.3.811:
-  version "1.3.816"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.816.tgz#ab6488b126de92670a6459fe3e746050e0c6276f"
-  integrity sha512-/AvJPIJldO0NkwkfpUD7u1e4YEGRFBQpFuvl9oGCcVgWOObsZB1loxVGeVUJB9kmvfsBUUChPYdgRzx6+AKNyg==
+  version "1.3.817"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.817.tgz#911b4775b5d9fa0c4729d4694adc81de85d8d8f6"
+  integrity sha512-Vw0Faepf2Id9Kf2e97M/c99qf168xg86JLKDxivvlpBQ9KDtjSeX0v+TiuSE25PqeQfTz+NJs375b64ca3XOIQ==
 
 elliptic@^6.5.3:
   version "6.5.4"
@@ -5081,9 +5086,9 @@ eslint-module-utils@^2.6.2:
     pkg-dir "^2.0.0"
 
 eslint-plugin-import@^2.22.1:
-  version "2.24.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-import/-/eslint-plugin-import-2.24.1.tgz#64aba8b567a1ba9921d5465586e86c491b8e2135"
-  integrity sha512-KSFWhNxPH8OGJwpRJJs+Z7I0a13E2iFQZJIvSnCu6KUs4qmgAm3xN9GYBCSoiGWmwA7gERZPXqYQjcoCROnYhQ==
+  version "2.24.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-import/-/eslint-plugin-import-2.24.2.tgz#2c8cd2e341f3885918ee27d18479910ade7bb4da"
+  integrity sha512-hNVtyhiEtZmpsabL4neEj+6M5DCLgpYyG9nzJY8lZQeQXEn5UPW1DpUdsMHMXsq98dbNm7nt1w9ZMSVpfJdi8Q==
   dependencies:
     array-includes "^3.1.3"
     array.prototype.flat "^1.2.4"
@@ -5099,7 +5104,7 @@ eslint-plugin-import@^2.22.1:
     pkg-up "^2.0.0"
     read-pkg-up "^3.0.0"
     resolve "^1.20.0"
-    tsconfig-paths "^3.10.1"
+    tsconfig-paths "^3.11.0"
 
 eslint-plugin-prettier@^3.1.2:
   version "3.4.1"
@@ -7862,7 +7867,7 @@ json-stringify-safe@~5.0.1:
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
   integrity sha1-Epai1Y/UXxmg9s4B1lcB4sc1tus=
 
-json5@2.x, json5@^2.1.2, json5@^2.2.0:
+json5@2.x, json5@^2.1.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.0.tgz#2dfefe720c6ba525d9ebd909950f0515316c89a3"
   integrity sha512-f+8cldu7X/y7RAJurMEJmdoKXGB/X550w2Nr3tTbezL6RwEE/iMcm+tZnXeoZtKuOq6ft8+CqzEkrIgx1fPoQA==
@@ -11979,12 +11984,13 @@ tsconfig-paths-webpack-plugin@^3.2.0:
     enhanced-resolve "^5.7.0"
     tsconfig-paths "^3.9.0"
 
-tsconfig-paths@^3.10.1, tsconfig-paths@^3.9.0:
-  version "3.10.1"
-  resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.10.1.tgz#79ae67a68c15289fdf5c51cb74f397522d795ed7"
-  integrity sha512-rETidPDgCpltxF7MjBZlAFPUHv5aHH2MymyPvh+vEyWAED4Eb/WeMbsnD/JDr4OKPOA1TssDHgIcpTN5Kh0p6Q==
+tsconfig-paths@^3.11.0, tsconfig-paths@^3.9.0:
+  version "3.11.0"
+  resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.11.0.tgz#954c1fe973da6339c78e06b03ce2e48810b65f36"
+  integrity sha512-7ecdYDnIdmv639mmDwslG6KQg1Z9STTz1j7Gcz0xa+nshh/gKDAHcPxRbWOsA3SPp0tXP2leTcY9Kw+NAkfZzA==
   dependencies:
-    json5 "^2.2.0"
+    "@types/json5" "^0.0.29"
+    json5 "^1.0.1"
     minimist "^1.2.0"
     strip-bom "^3.0.0"
 
