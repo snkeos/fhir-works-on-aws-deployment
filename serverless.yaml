@@ -132,6 +132,8 @@ provider:
   tracing:
     apiGateway: true
     lambda: true
+  httpApi:
+     cors: true
 
 functions:
   fhirServer:
