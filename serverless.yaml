@@ -167,12 +167,15 @@ functions:
       - http:
           method: OPTIONS
           path: /
+          cors: true
       - http:
           method: OPTIONS
           path: '{proxy+}'
+          cors: true
       - http:
           method: OPTIONS
           path: /metadata
+          cors: true
     handler: src/index.default
     provisionedConcurrency: 5
     environment:
