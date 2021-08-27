@@ -132,8 +132,6 @@ provider:
   tracing:
     apiGateway: true
     lambda: true
-  httpApi:
-     cors: true
 
 functions:
   fhirServer:
@@ -163,9 +161,11 @@ functions:
           method: ANY
           path: '{proxy+}'
           private: true
+          cors: true
       - http:
           method: GET
           path: /metadata
+          cors: true
       - http:
           method: OPTIONS
           path: /
