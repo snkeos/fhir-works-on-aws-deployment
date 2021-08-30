@@ -41,6 +41,10 @@ const RBACRules = (baseResources: string[]): RBACConfig => {
                 resources: ['Patient'],
             },
         },
+        scopeToGroup: {
+            'cdh/all': 'practitioner',
+            'cdh/m2m': 'practitioner'
+        }
     };
 };
 
