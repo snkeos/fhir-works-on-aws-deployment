@@ -42,6 +42,10 @@ const RBACRules = (baseResources: string[]): RBACConfig => {
             },
         },
         scopeToGroup: {
+            'fhirworks/practitioner': 'practitioner',
+            'fhirworks/non-practitioner': 'non-practitioner',
+            'fhirworks/auditor': 'auditor',
+            // TODO: Remove from here
             'cdh/all': 'practitioner',
             'cdh/m2m': 'practitioner'
         }
