@@ -38,6 +38,7 @@ custom:
           - resources.extensions.ApiGatewayMethodMetadataGet
           - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
         Set:
+          functions.fhirServer.events.0.http.path: '/{tenantId}/' 
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
         ElseExclude:
@@ -48,6 +49,7 @@ custom:
           - resources.extensions.ApiGatewayMethodMetadataGet
           - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
         Set:
+          functions.fhirServer.events.0.http.path: '/tenant/{tenantId}/' 
           functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
         ElseExclude:
@@ -55,11 +57,13 @@ custom:
 
       - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'          
         Set:
+          functions.fhirServer.events.3.http.path: '/{tenantId}/'
           functions.fhirServer.events.4.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.5.http.path: /{tenantId}/metadata
 
       - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'          
         Set:
+          functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
           functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
           functions.fhirServer.events.5.http.path: /tenant/{tenantId}/metadata
 
