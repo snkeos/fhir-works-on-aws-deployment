@@ -171,7 +171,6 @@ functions:
       - http:
           method: OPTIONS
           path: /
-
       - http:
           method: OPTIONS
           path: '{proxy+}'
