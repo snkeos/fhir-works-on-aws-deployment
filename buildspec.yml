@@ -16,6 +16,8 @@ phases:
 
         - mkdir -p $PACKAGE/fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWInt/* $PACKAGE/fhir-works-on-aws-interface
         - (cd $PACKAGE/fhir-works-on-aws-interface && yarn install)
+        - mkdir -p $PACKAGE/fhir-works-on-aws-authz-rbac && cp -r $CODEBUILD_SRC_DIR_FWARBAC/* $PACKAGE/fhir-works-on-aws-authz-rbac
+        - (cd $PACKAGE/fhir-works-on-aws-authz-rbac && yarn install)
         - mkdir -p $PACKAGE/fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FWRout/* $PACKAGE/fhir-works-on-aws-routing
         - (cd $PACKAGE/fhir-works-on-aws-routing && yarn install)
         - mkdir -p $PACKAGE/fhir-works-on-aws-search-es && cp -r $CODEBUILD_SRC_DIR_FWSES/* $PACKAGE/fhir-works-on-aws-search-es
