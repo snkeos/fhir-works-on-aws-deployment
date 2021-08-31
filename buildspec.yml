@@ -6,6 +6,7 @@ phases:
         nodejs: 14
       commands:
         - npm install -g yarn
+        - apt install git -y
     build:
       commands:
         # AWS doesn't like symlinks, so we have to go around this
@@ -14,16 +15,17 @@ phases:
         - mkdir $PACKAGE
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
 
-        - mkdir -p $PACKAGE/fhir-works-on-aws-interface && cp -r $CODEBUILD_SRC_DIR_FWInt/* $PACKAGE/fhir-works-on-aws-interface
-        - (cd $PACKAGE/fhir-works-on-aws-interface && yarn install)
-        - mkdir -p $PACKAGE/fhir-works-on-aws-authz-rbac && cp -r $CODEBUILD_SRC_DIR_FWARBAC/* $PACKAGE/fhir-works-on-aws-authz-rbac
-        - (cd $PACKAGE/fhir-works-on-aws-authz-rbac && yarn install)
-        - mkdir -p $PACKAGE/fhir-works-on-aws-routing && cp -r $CODEBUILD_SRC_DIR_FWRout/* $PACKAGE/fhir-works-on-aws-routing
-        - (cd $PACKAGE/fhir-works-on-aws-routing && yarn install)
-        - mkdir -p $PACKAGE/fhir-works-on-aws-search-es && cp -r $CODEBUILD_SRC_DIR_FWSES/* $PACKAGE/fhir-works-on-aws-search-es
-        - (cd $PACKAGE/fhir-works-on-aws-search-es && yarn install)
-        - mkdir -p $PACKAGE/fhir-works-on-aws-persistence-ddb && cp -r $CODEBUILD_SRC_DIR_FWPDDB/* $PACKAGE/fhir-works-on-aws-persistence-ddb
-        - (cd $PACKAGE/fhir-works-on-aws-persistence-ddb && yarn install)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch)
+
+        - (cd $PACKAGE/$FhirWorksInterfaceGitHubRepo && yarn install)
+        - (cd $PACKAGE/$FhirWorksAuthzRBACGitHubRepo && yarn install)
+        - (cd $PACKAGE/$FhirWorksRoutingGitHubRepo && yarn install)
+        - (cd $PACKAGE/$FhirWorksSearchESGitHubRepo && yarn install)
+        - (cd $PACKAGE/$FhirWorksPersistenceDDBGitHubRepo && yarn install)
 
         - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - tar -cvzf fhirworks.tgz $PACKAGE
