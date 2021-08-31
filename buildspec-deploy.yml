@@ -9,7 +9,7 @@ phases:
         - npm install -g yarn
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscli
-        - apt install jq sudo -y
+        - apt install jq -y
     build:
       commands:
         - ls -al
