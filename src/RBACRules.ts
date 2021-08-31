@@ -46,8 +46,8 @@ const RBACRules = (baseResources: string[]): RBACConfig => {
             'fhirworks/non-practitioner': 'non-practitioner',
             'fhirworks/auditor': 'auditor',
             'cdh/all': 'practitioner',
-            'cdh/m2m': 'practitioner'
-        }
+            'cdh/m2m': 'practitioner',
+        },
     };
 };
 
