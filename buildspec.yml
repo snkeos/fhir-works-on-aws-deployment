@@ -15,6 +15,13 @@ phases:
         - mkdir $PACKAGE
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
 
+        - echo "PACKAGE=$PACKAGE"
+        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo"
+        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo"
+        - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo"
+        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo"
+        - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo"
+
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch)
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch)
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch)
