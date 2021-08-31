@@ -16,11 +16,11 @@ phases:
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
 
         - echo "PACKAGE=$PACKAGE"
-        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo"
-        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo"
-        - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo"
-        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo"
-        - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo"
+        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
+        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo - FhirWorksRoutingGitHubBranch=$FhirWorksRoutingGitHubBranch"
+        - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo - FhirWorksInterfaceGitHubBranch=$FhirWorksInterfaceGitHubBranch"
+        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo - FhirWorksSearchESGitHubBranch=$FhirWorksSearchESGitHubBranch"
+        - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo - FhirWorksAuthzRBACGitHubBranch=$FhirWorksAuthzRBACGitHubBranch"
 
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch)
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch)
