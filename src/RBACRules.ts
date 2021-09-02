@@ -42,9 +42,9 @@ const RBACRules = (baseResources: string[]): RBACConfig => {
             },
         },
         scopeToGroup: {
-            'fhirworks/practitioner': 'practitioner',
-            'fhirworks/non-practitioner': 'non-practitioner',
-            'fhirworks/auditor': 'auditor',
+            'fhir/practitioner': 'practitioner',
+            'fhir/non-practitioner': 'non-practitioner',
+            'fhir/auditor': 'auditor',
         },
     };
 };
