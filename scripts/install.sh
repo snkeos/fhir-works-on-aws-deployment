@@ -24,6 +24,7 @@ function usage(){
     echo "    --multiTenancyTenantSubUrl: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
     echo "    --multiTenancyTokenClaim: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --multiTenancyTokenClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    echo "    --multiTenancyAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -189,6 +190,7 @@ multiTenancyEnabled=false
 multiTenancyTenantSubUrl=false
 multiTenancyTokenClaim="" 
 multiTenancyTokenClaimValuePrefix="" 
+multiTenancyAllTenantsScope="" 
 
 #Parse commandline args
 while [ "$1" != "" ]; do
@@ -211,8 +213,8 @@ while [ "$1" != "" ]; do
         --multiTenancyTokenClaimValuePrefix ) shift
                             multiTenancyTokenClaimValuePrefix=$1
                             ;;
-        --multiTenancyTenantSubUrl ) 
-                            multiTenancyTenantSubUrl=true
+        --multiTenancyAllTenantsScope ) shift
+                            multiTenancyAllTenantsScope=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -285,6 +287,7 @@ if [[ $multiTenancyEnabled  == 'true' ]];  then
     echo "  Multi Tenancy Tenant Type SubUrl: $multiTenancyTenantTypeSubUrl"
     echo "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
     echo "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
+    echo "  Multi Tenancy Access Control Token All Tenants Scope: $multiTenancyAllTenantsScope"
 fi
 echo ""
 if ! `YesOrNo "Are these settings correct?"`; then
@@ -325,36 +328,34 @@ if ! grep -Fq "devAwsUserAccountArn" serverless_config.json; then
 fi
 
 if [[ $multiTenancyEnabled == true ]]; then
-    mtEnabledArgs=(--useMultiTenancy "true")
-else
-    mtEnabledArgs=()
-fi
+    mtArgs=(--useMultiTenancy "true")
 
-if [[ $multiTenancyEnabled == true && "$multiTenancyTokenClaim" != "" ]]; then
-    if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
-        mtTokenArgs=(--multiTenancyTokenClaim $multiTenancyTokenClaim --multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
-    else
-        mtTokenArgs=(--multiTenancyTokenClaim $multiTenancyTokenClaim)
+    if [[ "$multiTenancyTokenClaim" != "" ]]; then
+        mtArgs+=(--multiTenancyTokenClaim $multiTenancyTokenClaim)
+        if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
+            mtArgs+=(--multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
+        fi
+    fi
+
+    if [[ "$multiTenancyAllTenantsScope" != "" ]]; then
+        mtArgs+=(--multiTenancyAllTenantsScope $multiTenancyAllTenantsScope)
+    fi
+    if [[ $multiTenancyTenantSubUrl == true ]]; then
+        mtArgs+=(--useMultiTenancyTenantSubUrl "true")
     fi
 else
-    mtTokenArgs=()
-fi
-
-if [[ $multiTenancyEnabled == true && $multiTenancyTenantSubUrl == true ]]; then
-    mtTenantTypeSubUrlArgs=(--useMultiTenancyTenantSubUrl true)
-else
-    mtTenantTypeSubUrlArgs=()
+    mtArgs=()
 fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-yarn run serverless deploy --region $region --stage $stage "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+yarn run serverless deploy --region $region --stage $stage "${mtArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.yml.  tee not used as it removes the output highlighting.
 
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}" > Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${mtArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${mtArgs[@]}" > Info_Output.yml
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
 
@@ -424,7 +425,7 @@ echo ""
 if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
     cd ${PACKAGE_ROOT}/auditLogMover
     yarn install --frozen-lockfile
-    yarn run serverless deploy --region $region --stage $stage "${mtEnabledArgs[@]}" "${mtTokenArgs[@]}" "${mtTenantTypeSubUrlArgs[@]}"
+    yarn run serverless deploy --region $region --stage $stage "${mtArgs[@]}"
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
 fi
