@@ -27,7 +27,6 @@ custom:
   multiTenancyAllTenantsScope: ${opt:multiTenancyAllTenantsScope, ""}
   corsOrigins: ${opt:corsOrigins, ""}
   useApiKeys: ${opt:useApiKeys, "true"}
-  extraAccessScope: "cdh/m2m"
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
       #- IF: '"${self:custom.useMultiTenancy}" == "false"'
@@ -35,10 +34,10 @@ custom:
       #    - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
       #    - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
 
-      - If: '"${self:custom.extraAccessScope}" != ""'
+      - If: '"${self:custom.multiTenancyAllTenantsScope}" != ""'
         Set:
-          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.extraAccessScope}"
-          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.extraAccessScope}"
+          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
+          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
 
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
         Exclude:
