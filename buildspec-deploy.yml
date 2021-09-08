@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+    install:
+      runtime-versions:
+        nodejs: 14
+        python: 3.8
+      commands:
+        - npm install -g yarn
+        - pip3 install --upgrade pip
+        - pip3 install --upgrade awscli
+        - apt install jq -y
+    build:
+      commands:
+        - ls -al
+        - tar -xzf fhirworks.tgz
+        - cat "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json"
+        - cat "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json"
+        - POOL=$(jq -r ".CloudDataHubUserPoolId" "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json") && echo "POOL= $POOL"
+        - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT= $POOL_CLIENT"
+        - echo "POOL_DOMAIN= $POOL_DOMAIN"
+        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyEnabled --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:")
+        - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml"
+        - |
+          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
+artifacts:
+  files:
+    - fhirworks/fhir-works-on-aws-deployment/Info_Output.yml
+    - fw-deploy-output.json

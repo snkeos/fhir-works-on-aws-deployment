@@ -11,18 +11,29 @@ custom:
   exportRequestTableName: 'export-request-${self:custom.stage}'
   exportRequestTableJobStatusIndex: 'jobStatus-index'
   stage: ${opt:stage, self:provider.stage}
+  stageType: ${opt:stageType, ""}
   region: ${opt:region, self:provider.region}
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  logLevel: ${opt.logLevel, 'error'}
+  logLevel: ${opt.logLevel, 'info'}
+  extUserPoolId: ${opt:extUserPoolId, ""}
+  extUserPoolClientId: ${opt:extUserPoolClientId, ""}
+  extUserPoolDomain: ${opt:extUserPoolDomain, ""}
   useMultiTenancy: ${opt:useMultiTenancy, 'false'}
   useMultiTenancyTenantSubUrl: ${opt:useMultiTenancyTenantSubUrl, 'false'}
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
   multiTenancyAllTenantsScope: ${opt:multiTenancyAllTenantsScope, ""}
+  corsOrigins: ${opt:corsOrigins, ""}
+  useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
+      #- IF: '"${self:custom.useMultiTenancy}" == "false"'
+      #  Exclude:
+      #    - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+      #    - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -32,7 +43,7 @@ custom:
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
         ElseExclude:
-          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
+            - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
 
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'
         Exclude:
@@ -43,10 +54,35 @@ custom:
           functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
         ElseExclude:
-          - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+            - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'          
+        Set:
+          functions.fhirServer.events.3.http.path: '/{tenantId}/'
+          functions.fhirServer.events.4.http.path: '/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.5.http.path: /{tenantId}/metadata
+
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'          
+        Set:
+          functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
+          functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.5.http.path: /tenant/{tenantId}/metadata
+
+      - If: '"${self:custom.corsOrigins}" == ""'
+        Exclude:
+          - functions.fhirServer.events.3 
+          - functions.fhirServer.events.4
+          - functions.fhirServer.events.5 
+
+      - If: '"${self:custom.useApiKeys}" == "false"'
+        Exclude:
+          - provider.apiKeys
+        Set:
+          functions.fhirServer.events.0.http.private: false
+          functions.fhirServer.events.1.http.private: false
+          functions.fhirServer.events.2.http.private: false
+
   bundle:
-    #externals:
-    #  - fhir-works-on-aws-routing
     packager: yarn
     copyFiles: # Copy any additional files to the generated package
       - from: 'bulkExport/glueScripts/export-script.py'
@@ -72,11 +108,10 @@ provider:
     EXPORT_REQUEST_TABLE_JOB_STATUS_INDEX: '${self:custom.exportRequestTableJobStatusIndex}'
     FHIR_BINARY_BUCKET: !Ref FHIRBinaryBucket
     ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
-    OAUTH2_DOMAIN_ENDPOINT:
-      !Join ['', ['https://', !Ref UserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+    OAUTH2_DOMAIN_ENDPOINT: !Join ['', ['https://', !If [ isUsingDefaultUserPool, !Ref UserPoolDomain, !Ref ExtUserPoolDomain ], !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
-    CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.8.0'
+    CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.7.0'
     VALIDATOR_LAMBDA_ALIAS:
       !If
         - isUsingHapiValidator
@@ -88,6 +123,7 @@ provider:
     MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
     MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
     MULTI_TENANCY_ALL_TENANTS_SCOPE: '${self:custom.multiTenancyAllTenantsScope}'
+
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
@@ -134,6 +170,15 @@ functions:
           private: true
       - http:
           method: GET
+          path: /metadata
+      - http:
+          method: OPTIONS
+          path: /
+      - http:
+          method: OPTIONS
+          path: '{proxy+}'
+      - http:
+          method: OPTIONS
           path: /metadata
     handler: src/index.default
     provisionedConcurrency: 5
@@ -214,6 +259,13 @@ resources:
         Type: String
         Default: ${self:custom.stage}
         Description: 'The deployment stage (e.g. dev, qa, prod). Default: dev'
+      StageType:
+        Type: String
+        Default: ${self:custom.stageType}
+        AllowedValues: 
+          - "dev"
+          - "prod"
+        Description: 'Specifies type of the deployment stage. The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
@@ -244,10 +296,24 @@ resources:
           - 'info'
           - 'warn'
           - 'error'
+      ExtUserPoolId: 
+        Type: String
+        Default: ${self:custom.extUserPoolId}
+        Description: Sets the identifier of an external Cognito UserPool. 
+      ExtUserPoolClientId: 
+        Type: String
+        Default: ${self:custom.extUserPoolClientId}
+        Description: Sets the identifier of the client, which belongs to the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
+      ExtUserPoolDomain: 
+        Type: String
+        Default: ${self:custom.extUserPoolDomain}
+        Description: Sets the domain of the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
+
   - Conditions:
-      isDev: !Equals [!Ref Stage, 'dev']
+      isDev: !Or [ !Equals [!Ref Stage, 'dev'], !Equals [ !Ref StageType, 'dev' ] ]
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
+      isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExtUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
   - Resources:
       ResourceDynamoDBTableV2:
         Metadata:
@@ -256,8 +322,8 @@ resources:
               - id: W28
                 reason: 'We want to set the table explicit name'
         Type: AWS::DynamoDB::Table
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.resourceTableName}'
           AttributeDefinitions:
@@ -335,8 +401,8 @@ resources:
                 reason: 'We want to set the table explicit name'
               - id: W78
                 reason: 'Backup not explicitly needed'
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.oldResourceTableName}'
           AttributeDefinitions:
@@ -365,7 +431,7 @@ resources:
           ProviderARNs:
             - !Join [
                 '',
-                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref UserPool],
+                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !If [ isUsingDefaultUserPool, !Ref UserPool, !Ref ExtUserPoolId ]],
               ]
       FHIRBinaryBucket:
         Type: AWS::S3::Bucket
@@ -673,7 +739,8 @@ resources:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
-              
+
+
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
@@ -682,10 +749,20 @@ resources:
   - Outputs:
       UserPoolId:
         Description: User pool id for the provisioning users.
-        Value: !Ref UserPool
+        Value: 
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPool
+            - !Ref ExtUserPoolId
+
       UserPoolAppClientId:
         Description: App client id for the provisioning users.
-        Value: !Ref UserPoolClient
+        Value:
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPoolClient
+            - !Ref ExtUserPoolClientId
+
       FHIRBinaryBucket:
         Description: S3 Bucket for storing Binary Objects
         Value: !Ref FHIRBinaryBucket
@@ -733,11 +810,6 @@ resources:
           ]
         Export:
           Name: !Join ['-', [CloudwatchExecutionLogGroup, !Ref Stage, Arn]]
-      ValidatorLambdaAlias:
-        Condition: isUsingHapiValidator
-        Description: Arn of Hapi Validator lambda
-        Value:
-          Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
 
 plugins:
   - serverless-step-functions
