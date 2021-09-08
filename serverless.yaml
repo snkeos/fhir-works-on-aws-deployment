@@ -24,6 +24,7 @@ custom:
   useMultiTenancyTenantSubUrl: ${opt:useMultiTenancyTenantSubUrl, 'false'}
   multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
   multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
+  multiTenancyAllTenantsScope: ${opt:multiTenancyAllTenantsScope, ""}
   corsOrigins: ${opt:corsOrigins, ""}
   useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
@@ -119,8 +120,10 @@ provider:
     LOG_LEVEL: '${self:custom.logLevel}'
     ENABLE_MULTI_TENANCY: '${self:custom.useMultiTenancy}'
     MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
-    MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
+    MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
     MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
+    MULTI_TENANCY_ALL_TENANTS_SCOPE: '${self:custom.multiTenancyAllTenantsScope}'
+
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
       description: Key for developer to access the FHIR Api
