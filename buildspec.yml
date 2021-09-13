@@ -16,23 +16,16 @@ phases:
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
 
         - echo "PACKAGE=$PACKAGE"
-        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
-        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo - FhirWorksRoutingGitHubBranch=$FhirWorksRoutingGitHubBranch"
         - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo - FhirWorksInterfaceGitHubBranch=$FhirWorksInterfaceGitHubBranch"
-        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo - FhirWorksSearchESGitHubBranch=$FhirWorksSearchESGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch && yarn install)
         - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo - FhirWorksAuthzRBACGitHubBranch=$FhirWorksAuthzRBACGitHubBranch"
-
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch)
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch)
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch)
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch)
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch)
-
-        - (cd $PACKAGE/$FhirWorksInterfaceGitHubRepo && yarn install)
-        - (cd $PACKAGE/$FhirWorksAuthzRBACGitHubRepo && yarn install)
-        - (cd $PACKAGE/$FhirWorksRoutingGitHubRepo && yarn install)
-        - (cd $PACKAGE/$FhirWorksSearchESGitHubRepo && yarn install)
-        - (cd $PACKAGE/$FhirWorksPersistenceDDBGitHubRepo && yarn install)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch && yarn install)
+        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo - FhirWorksRoutingGitHubBranch=$FhirWorksRoutingGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch && yarn install)
+        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo - FhirWorksSearchESGitHubBranch=$FhirWorksSearchESGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch && yarn install)
+        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch && yarn install)
 
         - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - tar -cvzf fhirworks.tgz $PACKAGE
