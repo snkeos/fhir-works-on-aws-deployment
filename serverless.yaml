@@ -34,6 +34,12 @@ custom:
       #    - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
       #    - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
 
+      # If multiTenancyAllTenantsScope is defined, add it to the api gateway to allow passthrough
+      - If: '"${self:custom.multiTenancyAllTenantsScope}" != ""'
+        Set:
+          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
+          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
+
       - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
