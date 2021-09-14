@@ -16,13 +16,13 @@ phases:
         - tar -xzf fhirworks.tgz
         - cat "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json"
         - cat "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json"
-        - POOL=$(jq -r ".CloudDataHubUserPoolId" "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json") && echo "POOL= $POOL"
-        - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT= $POOL_CLIENT"
-        - echo "POOL_DOMAIN= $POOL_DOMAIN"
+        - POOL=$(jq -r ".CloudDataHubUserPoolId" "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json") && echo "POOL=$POOL"
+        - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT=$POOL_CLIENT"
+        - echo "POOL_DOMAIN=$POOL_DOMAIN"
         - echo "STAGE_NAME=$STAGE_NAME"
         - echo "STAGE_TYPE=$STAGE_TYPE"
         - echo "REGION=$REGION"
-        - echo "ALL_TENANTS_SCOPE= $ALL_TENANTS_SCOPE"
+        - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyEnabled --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:" --multiTenancyAllTenantsScope "$ALL_TENANTS_SCOPE")
         - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml"
         - |
