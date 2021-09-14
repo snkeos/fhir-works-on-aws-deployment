@@ -38,7 +38,7 @@
   "dependencies": {
     "aws-sdk": "^2.785.0",
     "axios": "^0.21.1",
-    "fhir-works-on-aws-authz-rbac": "4.1.1",
+    "fhir-works-on-aws-authz-rbac": "link:../fhir-works-on-aws-authz-rbac",
     "fhir-works-on-aws-interface": "link:../fhir-works-on-aws-interface",
     "fhir-works-on-aws-persistence-ddb": "link:../fhir-works-on-aws-persistence-ddb",
     "fhir-works-on-aws-routing": "link:../fhir-works-on-aws-routing",
@@ -83,7 +83,7 @@
     "dot-prop": "^5.1.1",
     "bl": "^4.0.3",
     "node-fetch": "^2.6.1",
-    "urijs": "1.19.6",
+    "urijs": "1.19.7",
     "xmlhttprequest-ssl": "^1.6.2",
     "postcss": "^8.2.10",
     "underscore": "^1.12.1"
