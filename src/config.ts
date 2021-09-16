@@ -22,6 +22,7 @@ import {
 } from 'fhir-works-on-aws-persistence-ddb';
 import JsonSchemaValidator from 'fhir-works-on-aws-routing/lib/router/validation/jsonSchemaValidator';
 import HapiFhirLambdaValidator from 'fhir-works-on-aws-routing/lib/router/validation/hapiFhirLambdaValidator';
+import { buildTenantUrl } from 'fhir-works-on-aws-routing';
 import RBACRules from './RBACRules';
 import { loadImplementationGuides } from './implementationGuides/loadCompiledIGs';
 
@@ -61,19 +62,24 @@ const esSearch = new ElasticSearchService(
     DynamoDbUtil.cleanItem,
     fhirVersion,
     loadImplementationGuides('fhir-works-on-aws-search-es'),
+    undefined,
+    undefined,
+    (tenantId?: string) => {
+        return buildTenantUrl(tenantId, useMultiTenancyTenantUrl ? 'tenant' : undefined);
+    },
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion);
 
 const multiTenancyTokenClaim =
-    process.env.MULTI_TENANCY_TOKEN_CLAIM === '[object Object]' || process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined
-        ? ''
-        : process.env.MULTI_TENANCY_TOKEN_CLAIM;
+    process.env.MULTI_TENANCY_TOKEN_CLAIM === undefined ? '' : process.env.MULTI_TENANCY_TOKEN_CLAIM;
 
 const multiTenancyTokenValvePrefix =
-    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === '[object Object]' ||
-    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX === undefined
+    process.env.MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX === undefined
         ? ''
-        : process.env.MULTI_TENANCY_TOKEN_CLAIM_VALVE_PREFIX;
+        : process.env.MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX;
+
+const multiTenancyAllTenantsScope =
+    process.env.MULTI_TENANCY_ALL_TENANTS_SCOPE === undefined ? '' : process.env.MULTI_TENANCY_ALL_TENANTS_SCOPE;
 
 const OAuthUrl =
     process.env.OAUTH2_DOMAIN_ENDPOINT === '[object Object]' || process.env.OAUTH2_DOMAIN_ENDPOINT === undefined
@@ -112,6 +118,7 @@ export const fhirConfig: FhirConfig = {
         tenantAccessTokenClaim: multiTenancyTokenClaim !== '' ? multiTenancyTokenClaim : undefined,
         tenantAccessTokenClaimValuePrefix:
             multiTenancyTokenValvePrefix !== '' ? multiTenancyTokenValvePrefix : undefined,
+        tenantAccessTokenAllTenantsScope: multiTenancyAllTenantsScope !== '' ? multiTenancyAllTenantsScope : undefined,
     },
     validators,
     profile: {

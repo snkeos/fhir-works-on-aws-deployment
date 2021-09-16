@@ -9,6 +9,7 @@ param (
     [switch]$multiTenancyTenantSubUrlEnabled = $false,
     [string]$multiTenancyTokenClaim = "",
     [string]$multiTenancyTokenClaimValuePrefix = "",
+    [string]$multiTenancyAllTenantsScope = "",
     [switch]$help = $false
 )
 
@@ -21,9 +22,10 @@ function Usage {
     Write-Host "    -stage: Set stage for deploying AWS services (Default: 'dev')"
     Write-Host "    -region: Set region for deploying AWS services (Default: 'us-west-2')"
     Write-Host "    -multiTenancyEnabled: If set, multi tenancy is enabled."
-    Write-Host "    -multiTenancyTenantSubUrlEnabled: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
+    Write-Host "    -multiTenancyTenantSubUrl: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
     Write-Host "    -multiTenancyTokenClaim: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     Write-Host "    -multiTenancyTokenClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    Write-Host "    -multiTenancyAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     Write-Host "    -help: Displays this message`n`n"
 }
 
@@ -166,7 +168,9 @@ function Get-ValidPassword {
 
     Return $s1
 }
-function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenClaimValuePrefix, $tenantSubUrl) {
+
+function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenClaimValuePrefix, $tenantSubUrl, $allTenantsScope) {
+
     [string[]] $runServerlessArgs = @("run", "serverless")	
     [string[]] $runServerlessParamsArgs = @("--region", $region, "--stage", $stage)	
     if ( $multiTenancyEnabled ) {
@@ -182,6 +186,11 @@ function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenC
             }
         }
     
+        if ( $allTenantsScope -ne "" ) {
+            $runServerlessParamsArgs += ' --multiTenancyAllTenantsScope'
+            $runServerlessParamsArgs += $allTenantsScope
+        }
+
         if ( $tenantSubUrl ) {
             $runServerlessParamsArgs += ' --useMultiTenancyTenantSubUrl true'
         }
@@ -276,9 +285,10 @@ Write-Host "  Region: $region"
 
 Write-Host "  Multi Tenancy Enabled: $multiTenancyEnabled"
 if ($multiTenancyEnabled) {
-    Write-Host "  Multi Tenancy Tenant Sub Url Enabled: $multiTenancyTenantSubUrlEnabled"
+    Write-Host "  Multi Tenancy Tenant Sub Url Enabled: $multiTenancyTenantSubUrl"
     Write-Host "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
     Write-Host "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
+    Write-Host "  Multi Tenancy Access Control Token All Tenants Scope: $multiTenancyAllTenantsScope"
 }
 Write-Host "`n`n"
 
@@ -313,8 +323,7 @@ if ($SEL -eq $null) {
 
 Write-Host "`n`nDeploying FHIR Server"
 Write-Host "(This may take some time, usually ~20-30 minutes)`n`n" 
-
-$deployArgs = BuildServerlessCommandLineArgs "deploy" $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrlEnabled
+$deployArgs = BuildServerlessCommandLineArgs "deploy" $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrl $multiTenancyAllTenantsScope
 Start-Process yarn -ArgumentList $deployArgs -wait -NoNewWindow -PassThru
 
 if (-Not ($?) ) {
@@ -325,9 +334,9 @@ Write-Host "Deployed Successfully.`n"
 
 rm Info_Output.yml
 fc >> Info_Output.yml
-$infoArgs = BuildServerlessCommandLineArgs [string[]]@("info", "--verbose") $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrlEnabled
+
+$infoArgs = BuildServerlessCommandLineArgs [string[]]@("info", "--verbose") $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrl $multiTenancyAllTenantsScope
 Start-Process yarn -ArgumentList $infoArgs -wait -NoNewWindow -PassThru -RedirectStandardOutput .\Info_Output.yml
-#yarn run serverless info --verbose --region $region --stage $stage $mtArgs | Out-File -FilePath .\Info_Output.yml
 
 #Read in variables from Info_Output.yml
 $UserPoolId = GetFrom-Yaml "UserPoolId"
@@ -450,7 +459,6 @@ for (; ; ) {
         Set-Location $rootDir\auditLogMover
         yarn install --frozen-lockfile
         Start-Process yarn -ArgumentList $deployArgs -wait -NoNewWindow -PassThru
-        #yarn run serverless deploy --region $region --stage $stage
         Set-Location $rootDir
         Write-Host "`n`nSuccess."
         Break
