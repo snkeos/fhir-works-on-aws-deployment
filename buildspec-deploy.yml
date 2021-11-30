@@ -23,7 +23,7 @@ phases:
         - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
         - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyEnabled --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:" --multiTenancyAllTenantsScope "$ALL_TENANTS_SCOPE")
         - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml"
-        - SERVICE_ENDPOINT=`grep "ServiceEndpoint: " fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //'`
+        - SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //')
         - aws ssm put-parameter --name "$STAGE_NAME-fhirworks-url" --value $SERVICE_ENDPOINT --type "String" --overwrite
         - |
           echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
