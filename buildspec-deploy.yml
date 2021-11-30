@@ -14,10 +14,8 @@ phases:
       commands:
         - ls -al
         - tar -xzf fhirworks.tgz
-        - cat "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json"
-        - cat "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json"
-        - POOL=$(jq -r ".CloudDataHubUserPoolId" "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json") && echo "POOL=$POOL"
-        - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT=$POOL_CLIENT"
+        - POOL=$CloudDataHubUserPoolId && echo "POOL=$POOL"
+        - POOL_CLIENT=$CloudDataHubUserPoolClientId && echo "POOL_CLIENT=$POOL_CLIENT"
         - echo "POOL_DOMAIN=$POOL_DOMAIN"
         - echo "STAGE_NAME=$STAGE_NAME"
         - echo "STAGE_TYPE=$STAGE_TYPE"
