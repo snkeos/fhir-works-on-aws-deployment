@@ -8,7 +8,7 @@ phases:
       commands:
         - npm install -g yarn
         - pip3 install --upgrade pip
-        - pip3 install --upgrade awscli
+        - pip3 install --upgrade awscliv2
         - apt install jq -y
     build:
       commands:
