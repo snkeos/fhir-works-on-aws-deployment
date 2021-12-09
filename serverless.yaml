@@ -129,7 +129,6 @@ provider:
     MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
     MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
     MULTI_TENANCY_ALL_TENANTS_SCOPE: '${self:custom.multiTenancyAllTenantsScope}'
-    COMPILE_SCHEMA: 'true'
 
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
