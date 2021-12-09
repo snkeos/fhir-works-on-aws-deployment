@@ -358,6 +358,9 @@ resources:
               - Key: 'service'
                 Value: 'fhir'
             - !Ref AWS::NoValue
+          ProvisionedThroughput:
+            ReadCapacityUnits: 30
+            WriteCapacityUnits: 30
       ExportRequestDynamoDBTable:
         Metadata:
           cfn_nag:
