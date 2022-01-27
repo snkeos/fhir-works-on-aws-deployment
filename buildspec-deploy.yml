@@ -8,25 +8,26 @@ phases:
       commands:
         - npm install -g yarn
         - pip3 install --upgrade pip
-        - pip3 install --upgrade awscli
+        - pip3 install --upgrade awscliv2
         - apt install jq -y
     build:
       commands:
         - ls -al
         - tar -xzf fhirworks.tgz
-        - cat "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json"
-        - cat "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json"
-        - POOL=$(jq -r ".CloudDataHubUserPoolId" "$CODEBUILD_SRC_DIR_DepCog/cognito-deploy-output.json") && echo "POOL=$POOL"
-        - POOL_CLIENT=$(jq -r ".CloudDataHubUserPoolClientId" "$CODEBUILD_SRC_DIR_DepCogIDP/cognito-idp-deploy-output.json") && echo "POOL_CLIENT=$POOL_CLIENT"
+        - POOL_ID=$CloudDataHubUserPoolId && echo "POOL_ID=$POOL_ID"
+        - CLIENT_ID=$CloudDataHubUserPoolClientId && echo "CLIENT_ID=$CLIENT_ID"
         - echo "POOL_DOMAIN=$POOL_DOMAIN"
         - echo "STAGE_NAME=$STAGE_NAME"
         - echo "STAGE_TYPE=$STAGE_TYPE"
         - echo "REGION=$REGION"
         - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
-        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL" --poolclient "$POOL_CLIENT" --pooldomain "$POOL_DOMAIN" --multiTenancyEnabled --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:" --multiTenancyAllTenantsScope "$ALL_TENANTS_SCOPE")
+        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --multiTenancyEnabled --multiTenancyTokenClaim "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --multiTenancyTokenClaimValuePrefix "quentry:" --multiTenancyAllTenantsScope "$ALL_TENANTS_SCOPE")
         - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.yml"
         - |
-          echo "{ \"ServiceEndpoint\": \"$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //')\" }" > fw-deploy-output.json
+          SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.yml | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"
+          aws ssm put-parameter --name "$STAGE_NAME-fhirworks-url" --value "$SERVICE_ENDPOINT" --type "String" --overwrite
+          echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
+
 artifacts:
   files:
     - fhirworks/fhir-works-on-aws-deployment/Info_Output.yml
