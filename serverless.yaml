@@ -16,31 +16,23 @@ custom:
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  logLevel: ${opt.logLevel, 'info'}
+  enableMultiTenancy: ${opt:enableMultiTenancy, 'false'}
+  logLevel: ${opt:logLevel, 'error'}
+  enableESHardDelete: ${opt:enableESHardDelete, 'false'}
+  patientCompartmentFileV3: 'patientCompartmentSearchParams.3.0.2.json'
+  patientCompartmentFileV4: 'patientCompartmentSearchParams.4.0.1.json'
   extUserPoolId: ${opt:extUserPoolId, ""}
   extUserPoolClientId: ${opt:extUserPoolClientId, ""}
   extUserPoolDomain: ${opt:extUserPoolDomain, ""}
-  useMultiTenancy: ${opt:useMultiTenancy, 'false'}
-  useMultiTenancyTenantSubUrl: ${opt:useMultiTenancyTenantSubUrl, 'false'}
-  multiTenancyTokenClaim: ${opt:multiTenancyTokenClaim, ""}
-  multiTenancyTokenClaimValuePrefix: ${opt:multiTenancyTokenClaimValuePrefix, ""}
-  multiTenancyAllTenantsScope: ${opt:multiTenancyAllTenantsScope, ""}
+  
+  tenantIdClaimPath: ${opt:tenantIdClaimPath, ""}
+  tenantIdClaimValuePrefix: ${opt:tenantIdClaimValuePrefix, ""}
+  grantAccessAllTenantsScope: ${opt:grantAccessAllTenantsScope, ""}
   corsOrigins: ${opt:corsOrigins, ""}
   useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
-      #- IF: '"${self:custom.useMultiTenancy}" == "false"'
-      #  Exclude:
-      #    - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
-      #    - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
-
-      # If multiTenancyAllTenantsScope is defined, add it to the api gateway to allow passthrough
-      - If: '"${self:custom.multiTenancyAllTenantsScope}" != ""'
-        Set:
-          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
-          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.multiTenancyAllTenantsScope}"
-
-      - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'
+      - If: '"${self:custom.enableMultiTenancy}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
           - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
@@ -48,13 +40,10 @@ custom:
           functions.fhirServer.events.0.http.path: '/{tenantId}/' 
           functions.fhirServer.events.1.http.path: '/{tenantId}/{proxy+}' 
           functions.fhirServer.events.2.http.path: /{tenantId}/metadata
-        ElseExclude:
-            - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
 
-      - If: '"${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'
+      - If: '"${self:custom.enableMultiTenancy}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
-          - resources.extensions.ApiGatewayMethodTenantidVarMetadataGet
         Set:
           functions.fhirServer.events.0.http.path: '/tenant/{tenantId}/' 
           functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
@@ -62,13 +51,7 @@ custom:
         ElseExclude:
             - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
 
-      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "false"'          
-        Set:
-          functions.fhirServer.events.3.http.path: '/{tenantId}/'
-          functions.fhirServer.events.4.http.path: '/{tenantId}/{proxy+}' 
-          functions.fhirServer.events.5.http.path: /{tenantId}/metadata
-
-      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useMultiTenancy}" == "true" && "${self:custom.useMultiTenancyTenantSubUrl}" == "true"'          
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.enableMultiTenancy}" == "true"'          
         Set:
           functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
           functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
@@ -90,9 +73,16 @@ custom:
 
   bundle:
     packager: yarn
+    linting: false # We use our own linter
     copyFiles: # Copy any additional files to the generated package
       - from: 'bulkExport/glueScripts/export-script.py'
         to: './bulkExport/glueScripts/export-script.py'
+      - from: 'bulkExport/schema/transitiveReferenceParams.json'
+        to: './bulkExport/schema/transitiveReferenceParams.json'
+      - from: 'bulkExport/schema/${self:custom.patientCompartmentFileV3}'
+        to: './bulkExport/schema/${self:custom.patientCompartmentFileV3}'
+      - from: 'bulkExport/schema/${self:custom.patientCompartmentFileV4}'
+        to: './bulkExport/schema/${self:custom.patientCompartmentFileV4}'
       - from: 'compiledImplementationGuides'
         to: './compiledImplementationGuides'
 
@@ -100,7 +90,8 @@ provider:
   name: aws
   region: us-west-2
   stage: dev
-  runtime: nodejs12.x
+  runtime: nodejs14.x
+  architecture: x86_64
   memorySize: 512
   logRetentionInDays: 3653 # 10 years
   stackTags:
@@ -117,18 +108,17 @@ provider:
     OAUTH2_DOMAIN_ENDPOINT: !Join ['', ['https://', !If [ isUsingDefaultUserPool, !Ref UserPoolDomain, !Ref ExtUserPoolDomain ], !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
-    CUSTOM_USER_AGENT: 'AwsLabs/SO0128/2.7.0'
+    CUSTOM_USER_AGENT: 'AwsSolution/SO0128/GH-v4.1.0'
     VALIDATOR_LAMBDA_ALIAS:
       !If
         - isUsingHapiValidator
         - Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
         - !Ref AWS::NoValue
     LOG_LEVEL: '${self:custom.logLevel}'
-    ENABLE_MULTI_TENANCY: '${self:custom.useMultiTenancy}'
-    MULTI_TENANCY_TOKEN_CLAIM: '${self:custom.multiTenancyTokenClaim}'
-    MULTI_TENANCY_TOKEN_CLAIM_VALUE_PREFIX: '${self:custom.multiTenancyTokenClaimValuePrefix}'
-    MULTI_TENANCY_USE_TENANT_URL: '${self:custom.useMultiTenancyTenantSubUrl}'
-    MULTI_TENANCY_ALL_TENANTS_SCOPE: '${self:custom.multiTenancyAllTenantsScope}'
+    ENABLE_MULTI_TENANCY: '${self:custom.enableMultiTenancy}'
+    TENANT_ID_CLAIM_PATH: '${self:custom.tenantIdClaimPath}'
+    TENANT_ID_CLAIM_VALUE_PREFIX: '${self:custom.tenantIdClaimValuePrefix}'
+    GRANT_ACCESS_ALL_TENANTS_SCOPE: '${self:custom.grantAccessAllTenantsScope}'
 
   apiKeys:
     - name: 'developer-key-${self:custom.stage}' # Full name must be known at package-time
@@ -137,7 +127,6 @@ provider:
     throttle:
       burstLimit: 100 # maximum API request rate limit over a time ranging from one to a few seconds
       rateLimit: 50 # average requests per second over an extended period of time
-  variableSyntax: "\\${((?!AWS)[ ~:a-zA-Z0-9._@'\",\\-\\/\\(\\)]+?)}" # Use this for allowing CloudFormation Pseudo-Parameters in your serverless.yml
   logs:
     restApi:
       format: '{"authorizer.claims.sub":"$context.authorizer.claims.sub","error.message":"$context.error.message","extendedRequestId":"$context.extendedRequestId","httpMethod":"$context.httpMethod","identity.sourceIp":"$context.identity.sourceIp","integration.error":"$context.integration.error","integration.integrationStatus":"$context.integration.integrationStatus","integration.latency":"$context.integration.latency","integration.requestId":"$context.integration.requestId","integration.status":"$context.integration.status","path":"$context.path","requestId":"$context.requestId","responseLatency":"$context.responseLatency","responseLength":"$context.responseLength","stage":"$context.stage","status":"$context.status"}'
@@ -156,10 +145,6 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
-            scopes: # must have both scopes
-              - 'openid'
-              - 'profile'
-              - 'aws.cognito.signin.user.admin'
           method: ANY
           path: /
           private: true
@@ -167,10 +152,6 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
-            scopes: # must have both scopes
-              - 'openid'
-              - 'profile'
-              - 'aws.cognito.signin.user.admin'
           method: ANY
           path: '{proxy+}'
           private: true
@@ -186,17 +167,21 @@ functions:
       - http:
           method: OPTIONS
           path: /metadata
-    handler: src/index.default
+    handler: src/index.handler
     provisionedConcurrency: 5
     environment:
       EXPORT_STATE_MACHINE_ARN: !Ref BulkExportStateMachine
+      PATIENT_COMPARTMENT_V3: ${self:custom.patientCompartmentFileV3}
+      PATIENT_COMPARTMENT_V4: ${self:custom.patientCompartmentFileV4}
 
   ddbToEs:
     timeout: 300
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Write DDB changes from `resource` table to ElasticSearch service'
     role: DdbToEsLambdaRole
     handler: ddbToEsLambda/index.handler
+    environment:
+      ENABLE_ES_HARD_DELETE: ${self:custom.enableESHardDelete}
     events:
       - stream:
           type: dynamodb
@@ -208,7 +193,7 @@ functions:
   startExportJob:
     timeout: 30
     memorySize: 192
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Start the Glue job for bulk export'
     role: GlueJobRelatedLambdaRole
     handler: bulkExport/index.startExportJobHandler
@@ -218,7 +203,7 @@ functions:
   stopExportJob:
     timeout: 30
     memorySize: 192
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Stop the Glue job for bulk export'
     role: GlueJobRelatedLambdaRole
     handler: bulkExport/index.stopExportJobHandler
@@ -228,7 +213,7 @@ functions:
   getJobStatus:
     timeout: 30
     memorySize: 192
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Get the status of a Glue job run for bulk export'
     role: GlueJobRelatedLambdaRole
     handler: bulkExport/index.getJobStatusHandler
@@ -238,7 +223,7 @@ functions:
   updateStatus:
     timeout: 30
     memorySize: 192
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Update the status of a bulk export job'
     role: UpdateStatusLambdaRole
     handler: bulkExport/index.updateStatusStatusHandler
@@ -246,13 +231,25 @@ functions:
   uploadGlueScripts:
     timeout: 30
     memorySize: 192
-    runtime: nodejs12.x
+    runtime: nodejs14.x
     description: 'Upload glue scripts to s3'
     role: UploadGlueScriptsLambdaRole
     handler: bulkExport/uploadGlueScriptsToS3.handler
     disableLogs: true # needed to avoid race condition error "Resource of type 'AWS::Logs::LogGroup' already exists" since the custom resource lambda invocation may create the log group before CFN does
     environment:
       GLUE_SCRIPTS_BUCKET: !Ref GlueScriptsBucket
+
+  updateSearchMappings:
+    timeout: 300
+    memorySize: 512
+    runtime: nodejs14.x
+    description: 'Custom resource Lambda to update the search mappings'
+    role: UpdateSearchMappingsLambdaRole
+    handler: updateSearchMappings/index.handler
+    disableLogs: true # needed to avoid race condition error "Resource of type 'AWS::Logs::LogGroup' already exists" since the custom resource lambda invocation may create the log group before CFN does
+    environment:
+      ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
+      NUMBER_OF_SHARDS: !If [isDev, 1, 3] # 133 indices, one per resource types
 
 stepFunctions:
   stateMachines:
@@ -294,6 +291,13 @@ resources:
           - 'true'
           - 'false'
         Description: whether or not to use an already deployed HAPI Validator
+      EnableMultiTenancy:
+        Type: String
+        Default: ${self:custom.enableMultiTenancy}
+        AllowedValues:
+          - 'true'
+          - 'false'
+        Description: whether or not to enable multi-tenancy
       logLevel:
         Type: String
         Default: ${self:custom.logLevel}
@@ -319,7 +323,81 @@ resources:
       isDev: !Or [ !Equals [!Ref Stage, 'dev'], !Equals [ !Ref StageType, 'dev' ] ]
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
+      isMultiTenancyEnabled: !Equals [!Ref EnableMultiTenancy, 'true']
       isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExtUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
+
+  - Mappings:
+      # For the most up to date ec2 types see: https://aws.amazon.com/opensearch-service/pricing/
+      RegionMap:
+        us-east-2:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        us-east-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        us-west-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: r6g.large.elasticsearch
+        us-west-2:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        af-south-1:
+          smallEc2: c5.large.elasticsearch
+          largeEc2: m5.large.elasticsearch
+        ap-east-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        ap-south-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: r6g.large.elasticsearch
+        ap-northeast-3:
+          smallEc2: c5.large.elasticsearch
+          largeEc2: m5.large.elasticsearch
+        ap-northeast-2:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        ap-southeast-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        ap-southeast-2:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        ap-northeast-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        ca-central-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        eu-central-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        eu-west-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        eu-west-2:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        eu-south-1:
+          smallEc2: c5.large.elasticsearch
+          largeEc2: m5.large.elasticsearch
+        eu-west-3:
+          smallEc2: c5.large.elasticsearch
+          largeEc2: m5.large.elasticsearch
+        eu-north-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        me-south-1:
+          smallEc2: c5.large.elasticsearch
+          largeEc2: m5.large.elasticsearch
+        sa-east-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        us-gov-east-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
+        us-gov-west-1:
+          smallEc2: c6g.large.elasticsearch
+          largeEc2: m6g.large.elasticsearch
   - Resources:
       ResourceDynamoDBTableV2:
         Metadata:
@@ -345,9 +423,10 @@ resources:
               KeyType: HASH
             - AttributeName: vid
               KeyType: RANGE
+          BillingMode: PAY_PER_REQUEST
           StreamSpecification:
             StreamViewType: NEW_AND_OLD_IMAGES
-          PointInTimeRecoverySpecification: 
+          PointInTimeRecoverySpecification:
             PointInTimeRecoveryEnabled: true
           SSESpecification:
             KMSMasterKeyId: !Ref DynamodbKMSKey
@@ -435,7 +514,7 @@ resources:
           IdentitySource: method.request.header.Authorization
           RestApiId: !Ref ApiGatewayRestApi
           Type: COGNITO_USER_POOLS
-          Name: Authorizer
+          Name: !Join ['-', [fhir-works-authorizer, !Ref Stage, !Ref AWS::Region]]
           ProviderARNs:
             - !Join [
                 '',
@@ -456,6 +535,11 @@ resources:
               - ServerSideEncryptionByDefault:
                   SSEAlgorithm: aws:kms
                   KMSMasterKeyID: !Ref S3KMSKey
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
       FHIRLogsBucket:
         Type: AWS::S3::Bucket
         DeletionPolicy: Retain
@@ -471,6 +555,11 @@ resources:
             ServerSideEncryptionConfiguration:
               - ServerSideEncryptionByDefault:
                   SSEAlgorithm: AES256
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
       FHIRBinaryBucketHttpsOnlyPolicy:
         Type: AWS::S3::BucketPolicy
         Properties:
@@ -610,7 +699,7 @@ resources:
                       Action:
                         - 'lambda:InvokeFunction'
                       Resource:
-                        - Fn::ImportValue: "fhir-service-validator-lambda-${self:custom.stage}"
+                        - !ImportValue 'fhir-service-validator-lambda-${self:custom.stage}'
                     - !Ref AWS::NoValue
       DdbToEsLambdaRole:
         Type: AWS::IAM::Role
@@ -679,16 +768,114 @@ resources:
                     Resource:
                       - !GetAtt DynamodbKMSKey.Arn
                       - !GetAtt ElasticSearchKMSKey.Arn
-      DdbToEsDLQ:
+
+      UpdateSearchMappingsLambdaRole:
+        Type: AWS::IAM::Role
         Metadata:
           cfn_nag:
             rules_to_suppress:
-              - id: W48
-                reason: 'KMS CMK not defined here'
+              - id: W11
+                reason: '* only applies to X-Ray statement which does not define a group or sampling-rule'
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Principal:
+                  Service: 'lambda.amazonaws.com'
+                Action: 'sts:AssumeRole'
+          Policies:
+            - PolicyName: 'DdbToEsLambdaPolicy'
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - logs:CreateLogStream
+                      - logs:CreateLogGroup
+                      - logs:PutLogEvents
+                    Resource: !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:*:*'
+                  - Effect: Allow
+                    Action:
+                      - xray:PutTraceSegments
+                      - xray:PutTelemetryRecords
+                    Resource:
+                      - '*'
+                  - Effect: Allow
+                    Action:
+                      - 'es:ESHttpPost'
+                      - 'es:ESHttpPut'
+                      - 'es:ESHttpHead'
+                    Resource:
+                      - !Join ['', [!GetAtt ElasticSearchDomain.Arn, '/*']]
+            - PolicyName: 'KMSPolicy'
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - 'kms:Describe*'
+                      - 'kms:Get*'
+                      - 'kms:List*'
+                      - 'kms:Encrypt'
+                      - 'kms:Decrypt'
+                      - 'kms:ReEncrypt*'
+                      - 'kms:GenerateDataKey'
+                      - 'kms:GenerateDataKeyWithoutPlaintext'
+                    Resource:
+                      - !GetAtt ElasticSearchKMSKey.Arn
+      DdbToEsDLQ:
         Type: AWS::SQS::Queue
         Properties:
-          MessageRetentionPeriod: 1209600 # 14 days in seconds 
+          MessageRetentionPeriod: 1209600 # 14 days in seconds
+          KmsMasterKeyId: 'alias/aws/sqs'
+
+      DdbToEsDLQHttpsOnlyPolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+          PolicyDocument:
+            Statement:
+              - Effect: Deny
+                Action:
+                  - SQS:*
+                Resource:
+                  - !GetAtt DdbToEsDLQ.Arn
+                Principal: '*'
+                Condition:
+                  Bool:
+                    'aws:SecureTransport': false
+          Queues: [!Ref DdbToEsDLQ]
+
+      # Create a permissions boundary for role Serverless creates to manage Cloudwatch access
+      # The default role has permission to create any role and attach any policy. Here we are restricting
+      # the role to only create a specific role and attach only Cloudwatch publishing managed policy
+      ServerlessLogsBoundary:
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+          Description: Allows serverless to manage CloudWatch publishing
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apigateway:GET
+                  - apigateway:PATCH
+                Resource: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}::/account'
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:AttachRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:PassRole
+                Resource: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/serverlessApiGatewayCloudWatchRole'
+                Condition:
+                  ArnEqualsIfExists:
+                    iam:PolicyARN: 'arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs'
   - extensions:
+      # Add custom permission boundary to role serverless uses for creating Cloudwatch publishing role
+      IamRoleCustomResourcesLambdaExecution:
+        Properties:
+          PermissionsBoundary: !Ref ServerlessLogsBoundary
       DdbToEsEventSourceMappingDynamodbResourceDynamoDBTableV2:
         Properties:
           DestinationConfig:
@@ -735,19 +922,13 @@ resources:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
-      ApiGatewayMethodTenantidVarMetadataGet:
-        Metadata:
-          cfn_nag:
-            rules_to_suppress:
-              - id: W45
-                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+
       ApiGatewayMethodTenantTenantidVarMetadataGet:
         Metadata:
           cfn_nag:
             rules_to_suppress:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
-
 
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
@@ -798,6 +979,16 @@ resources:
         Condition: isDev
         Description: App client id for the provisioning ES Kibana users.
         Value: !Ref KibanaUserPoolClient
+      CloudwatchAccessLogGroup:
+        Description: Cloudwatch Access log group for storing request/responses for auditing purposes
+        Value: !Ref ApiGatewayLogGroup
+        Export:
+          Name: !Join ['-', [CloudwatchAccessLogGroup, !Ref Stage]]
+      CloudwatchAccessLogGroupArn:
+        Description: Cloudwatch Access log group ARN for storing request/responses for auditing purposes
+        Value: !GetAtt ApiGatewayLogGroup.Arn
+        Export:
+          Name: !Join ['-', [CloudwatchAccessLogGroup, !Ref Stage, Arn]]
       CloudwatchExecutionLogGroup:
         Description: Cloudwatch Execution log group for storing request/responses for auditing purposes
         Value: !Join ['', ['API-Gateway-Execution-Logs_', !Ref ApiGatewayRestApi, '/', !Ref Stage]]
@@ -819,8 +1010,14 @@ resources:
         Export:
           Name: !Join ['-', [CloudwatchExecutionLogGroup, !Ref Stage, Arn]]
 
+      ValidatorLambdaAlias:
+        Condition: isUsingHapiValidator
+        Description: Arn of Hapi Validator lambda
+        Value: !ImportValue 'fhir-service-validator-lambda-${self:custom.stage}'
+
 plugins:
   - serverless-step-functions
   - serverless-bundle
   - serverless-offline
   - serverless-plugin-ifelse
+

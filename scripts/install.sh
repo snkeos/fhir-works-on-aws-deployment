@@ -29,11 +29,10 @@ function usage(){
     echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --pooldomain (-d): Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
-    echo "    --multiTenancyEnabled: If set multi tenancy is enabled."
-    echo "    --multiTenancyTenantSubUrlEnabled: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
-    echo "    --multiTenancyTokenClaim: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
-    echo "    --multiTenancyTokenClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
-    echo "    --multiTenancyAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
+    echo "    --enableMultiTenancy: If set multi tenancy is enabled."
+    echo "    --tenantIdClaimPath: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    echo "    --tenantIdClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    echo "    --grantAccessAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
     echo "    --useApiKeys (-k): Specifies whether to enable api keys or not. Allowed values are: yes, no (Default: 'yes')"
     echo "    --silentInstall (-i): Specifies whether to perform the installation silently or not, Allowed values are: yes, no  (Default: 'no')"
@@ -140,9 +139,9 @@ function install_dependencies(){
     return 0
 }
 
-#Function to parse YAML files
-##Usage: eval $(parse_yaml <FILE_PATH> <PREFIX>)
-##Output: adds variables from YAML file to namespace of script
+#Function to parse log files
+##Usage: eval $(parse_log <FILE_PATH> <PREFIX>)
+##Output: adds variables from log file to namespace of script
 ##          variable names are prefixed with <PREFIX>, if supplied
 ##          sublists are marked with _
 ##
@@ -153,7 +152,7 @@ function install_dependencies(){
 ##Example Output:
 ##          testLeve1_testLevel2=3
 ##
-function parse_yaml() {
+function parse_log() {
    local prefix=$2
    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
    sed -ne "s|^\($s\):|\1|" \
@@ -223,11 +222,10 @@ region="us-west-2"
 extUserPool=""
 extUserPoolClient=""
 extUserPoolDomain=""
-multiTenancyEnabled=false
-multiTenancyTenantSubUrlEnabled=false
-multiTenancyTokenClaim="" 
-multiTenancyTokenClaimValuePrefix="" 
-multiTenancyAllTenantsScope="" 
+enableMultiTenancy=false
+tenantIdClaimPath="" 
+tenantIdClaimValuePrefix="" 
+grantAccessAllTenantsScope="" 
 hasExtUserPoolParameters=false
 corsOrigins=""
 silentInstall="no"
@@ -255,20 +253,17 @@ while [ "$1" != "" ]; do
         -d | --pooldomain ) shift
                             extUserPoolDomain=$1
                             ;;
-        --multiTenancyEnabled )
-                            multiTenancyEnabled=true
+        --enableMultiTenancy )
+                            enableMultiTenancy=true
                             ;;
-        --multiTenancyTenantSubUrlEnabled ) 
-                            multiTenancyTenantSubUrlEnabled=true
+        -c | --tenantIdClaimPath ) shift
+                            tenantIdClaimPath=$1
                             ;;
-        -c | --multiTenancyTokenClaim ) shift
-                            multiTenancyTokenClaim=$1
+        -v | --tenantIdClaimValuePrefix ) shift
+                            tenantIdClaimValuePrefix=$1
                             ;;
-        -v | --multiTenancyTokenClaimValuePrefix ) shift
-                            multiTenancyTokenClaimValuePrefix=$1
-                            ;;
-        --multiTenancyAllTenantsScope ) shift
-                            multiTenancyAllTenantsScope=$1
+        --grantAccessAllTenantsScope ) shift
+                            grantAccessAllTenantsScope=$1
                             ;;
         -o | --corsOrigins ) shift
                             corsOrigins=$1
@@ -343,11 +338,11 @@ if $already_deployed; then
         echo -e "\nOkay, let's redeploy the server.\n"
     else
         if ! $fail; then
-            eval $( parse_yaml Info_Output.yml )
+            eval $( parse_log Info_Output.log )
             echo -e "\n\nSetup completed successfully."
             echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"
             echo "For more information on setting up POSTMAN, please see the README file."
-            echo -e "All user details were stored in 'Info_Output.yml'.\n"
+            echo -e "All user details were stored in 'Info_Output.log'.\n"
             echo -e "You can obtain new Cognito authorization tokens by using the init-auth.py script.\n"
             echo "Syntax: "
             echo "AWS_ACCESS_KEY_ID=<ACCESS_KEY> AWS_SECRET_ACCESS_KEY=<SECRET-KEY> python3 scripts/init-auth.py <USER_POOL_APP_CLIENT_ID> <REGION>"
@@ -376,12 +371,11 @@ if [[ $hasExtUserPoolParameters  == true ]];  then
 else
     echo "  Default User pool is created for AWS FHIR Works."
 fi
-echo "  Multi Tenancy Enabled: $multiTenancyEnabled"
-if [[ $multiTenancyEnabled  == 'true' ]];  then
-    echo "  Multi Tenancy Tenant Type SubUrl Enabled: $multiTenancyTenantSubUrlEnabled"
-    echo "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
-    echo "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
-    echo "  Multi Tenancy Access Control Token All Tenants Scope: $multiTenancyAllTenantsScope"
+echo "  Multi Tenancy Enabled: $enableMultiTenancy"
+if [[ $enableMultiTenancy  == 'true' ]];  then
+    echo "  Tenant Id Claim Path: $tenantIdClaimPath"
+    echo "  Tenant Id Claim Value Prefix: $tenantIdClaimValuePrefix"
+    echo "  Grant access to all tenants scope: $grantAccessAllTenantsScope"
 fi
 if [[ $corsOrigins  != "" ]];  then
     echo "  Cross-Origin Resource Sharing enabled for origins: $corsOrigins"
@@ -447,21 +441,18 @@ else
     stageTypeArgs=()
 fi
 
-if [[ $multiTenancyEnabled == true ]]; then
-    mtArgs=(--useMultiTenancy "true")
+if [[ $enableMultiTenancy == true ]]; then
+    mtArgs=(--enableMultiTenancy "true")
 
-    if [[ "$multiTenancyTokenClaim" != "" ]]; then
-        mtArgs+=(--multiTenancyTokenClaim $multiTenancyTokenClaim)
-        if [[ "$multiTenancyTokenClaimValuePrefix" != "" ]]; then
-            mtArgs+=(--multiTenancyTokenClaimValuePrefix $multiTenancyTokenClaimValuePrefix)
+    if [[ "$tenantIdClaimPath" != "" ]]; then
+        mtArgs+=(--tenantIdClaimPath $tenantIdClaimPath)
+        if [[ "$tenantIdClaimValuePrefix" != "" ]]; then
+            mtArgs+=(--tenantIdClaimValuePrefix $tenantIdClaimValuePrefix)
         fi
     fi
 
-    if [[ "$multiTenancyAllTenantsScope" != "" ]]; then
-        mtArgs+=(--multiTenancyAllTenantsScope $multiTenancyAllTenantsScope)
-    fi
-    if [[ $multiTenancyTenantSubUrl == true ]]; then
-        mtArgs+=(--useMultiTenancyTenantSubUrl "true")
+    if [[ "$grantAccessAllTenantsScope" != "" ]]; then
+        mtArgs+=(--grantAccessAllTenantsScope $grantAccessAllTenantsScope)
     fi
 else
     mtArgs=()
@@ -482,8 +473,8 @@ touch Info_Output.yml
 
 SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.yml
 
-#Read in variables from Info_Output.yml
-eval $( parse_yaml Info_Output.yml )
+#Read in variables from Info_Output.log
+eval $( parse_log Info_Output.log )
 
 
 ## Cognito Init
@@ -491,7 +482,7 @@ cd ${PACKAGE_ROOT}/scripts
 echo "Setting up AWS Cognito with default user credentials to support authentication in the future..."
 echo "This will output a token that you can use to access the FHIR API."
 echo "(You can generate a new token at any time after setup using the included init-auth.py script)"
-echo -e "\nACCESS TOKEN:"
+echo -e "\nID TOKEN:"
 echo -e "\n***\n"
 python3 provision-user.py "$UserPoolId" "$UserPoolAppClientId" "$region" >/dev/null 2>&1 ||
     echo -e "Warning: Cognito has already been initialized.\nIf you need to generate a new token, please use the init-auth.py script.\nContinuing..."
@@ -506,36 +497,23 @@ if [[ "$silentInstall" == "no" ]]; then
             echo ""
             echo "Okay, we'll need to create a cognito user using an email address and password."
             echo ""
-            read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
-            echo -e "\n"
-            if `YesOrNo "Is $cognitoUsername your correct email?"`; then
-                echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
-                echo "  * 8-20 characters long"
-                echo "  * at least 1 lowercase character"
-                echo "  * at least 1 uppercase character"
-                echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
-                echo "  * at least 1 number character"
-                echo ""
-                temp_cognito_p=`get_valid_pass`
-                echo ""
-                aws cognito-idp sign-up \
-                --region "$region" \
-                --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
-                --username "$cognitoUsername" \
-                --password "$temp_cognito_p" \
-                --user-attributes Name="email",Value="$cognitoUsername" &&
-                echo -e "\nSuccess: Created a cognito user.\n\n \
-                        You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
-                        You may have to verify your email address before logging in.\n \
-                        The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
-                        This URL will also be copied below:\n \
-                        $ElasticSearchDomainKibanaEndpoint"
-                break
-            else
-                echo -e "\nSorry about that--let's start over.\n"
-            fi
-        done
-    fi
+            aws cognito-idp sign-up \
+              --region "$region" \
+              --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
+              --username "$cognitoUsername" \
+              --password "$temp_cognito_p" \
+              --user-attributes Name="email",Value="$cognitoUsername" &&
+            echo -e "\nSuccess: Created a cognito user.\n\n \
+                    You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
+                    You may have to verify your email address before logging in.\n \
+                    The URL for the Kibana server can be found in ./Info_Output.log in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
+                    This URL will also be copied below:\n \
+                    $ElasticSearchDomainKibanaEndpoint"
+            break
+        else
+            echo -e "\nSorry about that--let's start over.\n"
+        fi
+    done
 fi
 cd ${PACKAGE_ROOT}
 ##Cloudwatch audit log mover
@@ -577,7 +555,7 @@ fi
 echo -e "\n\nSetup completed successfully."
 echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"
 echo "For more information on setting up POSTMAN, please see the README file."
-echo -e "All user details were stored in 'Info_Output.yml'.\n"
+echo -e "All user details were stored in 'Info_Output.log'.\n"
 echo -e "You can obtain new Cognito authorization tokens by using the init-auth.py script.\n"
 echo "Syntax: "
 echo "python3 scripts/init-auth.py <USER_POOL_APP_CLIENT_ID> <REGION>"

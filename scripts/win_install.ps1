@@ -5,11 +5,10 @@
 param (
     [string]$region = "us-west-2",
     [string]$stage = "dev",
-    [switch]$multiTenancyEnabled = $false,
-    [switch]$multiTenancyTenantSubUrlEnabled = $false,
-    [string]$multiTenancyTokenClaim = "",
-    [string]$multiTenancyTokenClaimValuePrefix = "",
-    [string]$multiTenancyAllTenantsScope = "",
+    [switch]$enableMultiTenancy = $false,
+    [string]$tenantIdClaimPath = "",
+    [string]$tenantIdClaimValuePrefix = "",
+    [string]$grantAccessAllTenantsScope = "",
     [switch]$help = $false
 )
 
@@ -21,11 +20,10 @@ function Usage {
     Write-Host "Optional Parameters:`n"
     Write-Host "    -stage: Set stage for deploying AWS services (Default: 'dev')"
     Write-Host "    -region: Set region for deploying AWS services (Default: 'us-west-2')"
-    Write-Host "    -multiTenancyEnabled: If set, multi tenancy is enabled."
-    Write-Host "    -multiTenancyTenantSubUrl: If set, the tenant sub url is in the path: /tenant/{tenantId}/Patient/... otherwise /{tenantId}/Patient/..."
-    Write-Host "    -multiTenancyTokenClaim: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
-    Write-Host "    -multiTenancyTokenClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
-    Write-Host "    -multiTenancyAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
+    Write-Host "    -enableMultiTenancy: If set, multi tenancy is enabled."
+    Write-Host "    -tenantIdClaimPath: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    Write-Host "    -tenantIdClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    Write-Host "    -grantAccessAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     Write-Host "    -help: Displays this message`n`n"
 }
 
@@ -106,14 +104,14 @@ function Install-Dependencies {
     return
 }
 
-#Function to get a value from YAML files
-## Usage: GetFrom-Yaml "AttributeName"
-##        GetFrom-Yaml "UserClientId"
-## Output: value stored in YAML
-## Note: This function only reads single lines of YAML files
-function GetFrom-Yaml {
+#Function to get a value from Log files
+## Usage: GetFrom-Log "AttributeName"
+##        GetFrom-Log "UserClientId"
+## Output: value stored in Info_Output.log
+## Note: This function only reads single lines of log files
+function GetFrom-Log {
     Param($valName)
-    gc Info_Output.yml | % { if ($_ -match "^[`t` ]*$valName") { Return $_.split(": ")[-1] } }
+    gc Info_Output.log | % { if($_ -match "^[`t` ]*$valName") {Return $_.split(": ")[-1]}}
 }
 
 function Get-ValidPassword {
@@ -169,30 +167,26 @@ function Get-ValidPassword {
     Return $s1
 }
 
-function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenClaimValuePrefix, $tenantSubUrl, $allTenantsScope) {
+function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenClaimValuePrefix, $allTenantsScope) {
 
     [string[]] $runServerlessArgs = @("run", "serverless")	
     [string[]] $runServerlessParamsArgs = @("--region", $region, "--stage", $stage)	
-    if ( $multiTenancyEnabled ) {
-        $runServerlessParamsArgs += ' --useMultiTenancy true'
+    if ( $enableMultiTenancy ) {
+        $runServerlessParamsArgs += ' --enableMultiTenancy true'
     
         if ( $tokenClaim -ne "" ) {  
-            $runServerlessParamsArgs += '--multiTenancyTokenClaim'
+            $runServerlessParamsArgs += '--tenantIdClaimPath'
             $runServerlessParamsArgs += $tokenClaim
     
             if ( $tokenClaimValuePrefix -ne "" ) {
-                $runServerlessParamsArgs += '--multiTenancyTokenClaimValuePrefix' 
+                $runServerlessParamsArgs += '--tenantIdClaimValuePrefix' 
                 $runServerlessParamsArgs += $tokenClaimValuePrefix
             }
         }
     
         if ( $allTenantsScope -ne "" ) {
-            $runServerlessParamsArgs += ' --multiTenancyAllTenantsScope'
+            $runServerlessParamsArgs += ' --grantAccessAllTenantsScope'
             $runServerlessParamsArgs += $allTenantsScope
-        }
-
-        if ( $tenantSubUrl ) {
-            $runServerlessParamsArgs += ' --useMultiTenancyTenantSubUrl true'
         }
     }
     [string[]] $compositeCmdArgs = @($runServerlessArgs, $serverlessActions, $runServerlessParamsArgs)
@@ -275,7 +269,7 @@ if ($already_deployed) {
         }
     } until ($response -eq 0)
 
-    if ($fail) { yarn run serverless remove }
+    if ($fail) { yarn run serverless-remove }
 }
 
 
@@ -283,12 +277,11 @@ Write-Host "Setup will proceed with the following parameters: `n"
 Write-Host "  Stage: $stage"
 Write-Host "  Region: $region"
 
-Write-Host "  Multi Tenancy Enabled: $multiTenancyEnabled"
-if ($multiTenancyEnabled) {
-    Write-Host "  Multi Tenancy Tenant Sub Url Enabled: $multiTenancyTenantSubUrl"
-    Write-Host "  Multi Tenancy Access Control Token Claim: $multiTenancyTokenClaim"
-    Write-Host "  Multi Tenancy Access Control Token Claim Value Prefix: $multiTenancyTokenClaimValuePrefix"
-    Write-Host "  Multi Tenancy Access Control Token All Tenants Scope: $multiTenancyAllTenantsScope"
+Write-Host "  Multi Tenancy Enabled: $enableMultiTenancy"
+if ($enableMultiTenancy) {
+    Write-Host "  Tenant Id Claim Path: $tenantIdClaimPath"
+    Write-Host "  Tenant Id Claim Value Prefix: $tenantIdClaimValuePrefix"
+    Write-Host "  Grant access to all tenants scope: $grantAccessAllTenantsScope"
 }
 Write-Host "`n`n"
 
@@ -323,7 +316,7 @@ if ($SEL -eq $null) {
 
 Write-Host "`n`nDeploying FHIR Server"
 Write-Host "(This may take some time, usually ~20-30 minutes)`n`n" 
-$deployArgs = BuildServerlessCommandLineArgs "deploy" $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrl $multiTenancyAllTenantsScope
+$deployArgs = BuildServerlessCommandLineArgs "deploy" $tenantIdClaimPath $tenantIdClaimValuePrefix $grantAccessAllTenantsScope
 Start-Process yarn -ArgumentList $deployArgs -wait -NoNewWindow -PassThru
 
 if (-Not ($?) ) {
@@ -335,15 +328,15 @@ Write-Host "Deployed Successfully.`n"
 rm Info_Output.yml
 fc >> Info_Output.yml
 
-$infoArgs = BuildServerlessCommandLineArgs [string[]]@("info", "--verbose") $multiTenancyTokenClaim $multiTenancyTokenClaimValuePrefix $multiTenancyTenantSubUrl $multiTenancyAllTenantsScope
+$infoArgs = BuildServerlessCommandLineArgs [string[]]@("info", "--verbose") $tenantIdClaimPath $tenantIdClaimValuePrefix $grantAccessAllTenantsScope
 Start-Process yarn -ArgumentList $infoArgs -wait -NoNewWindow -PassThru -RedirectStandardOutput .\Info_Output.yml
 
-#Read in variables from Info_Output.yml
-$UserPoolId = GetFrom-Yaml "UserPoolId"
-$UserPoolAppClientId = GetFrom-Yaml "UserPoolAppClientId"
-$region = GetFrom-Yaml "Region"
-$ElasticSearchKibanaUserPoolAppClientId = GetFrom-Yaml "ElasticSearchKibanaUserPoolAppClientId"
-$ElasticSearchDomainKibanaEndpoint = GetFrom-Yaml "ElasticSearchDomainKibanaEndpoint"
+#Read in variables from Info_Output.log
+$UserPoolId = GetFrom-Log "UserPoolId"
+$UserPoolAppClientId = GetFrom-Log "UserPoolAppClientId"
+$region = GetFrom-Log "Region"
+$ElasticSearchKibanaUserPoolAppClientId = GetFrom-Log "ElasticSearchKibanaUserPoolAppClientId"
+$ElasticSearchDomainKibanaEndpoint = GetFrom-Log "ElasticSearchDomainKibanaEndpoint"
 
 #refresh environment variables without exiting script
 Refresh-Environment
@@ -353,7 +346,7 @@ Set-Location $rootDir\scripts
 Write-Host "Setting up AWS Cognito with default user credentials to support authentication in the future..."
 Write-Host "This will output a token that you can use to access the FHIR API."
 Write-Host "(You can generate a new token at any time after setup using the included init-auth.py script)"
-Write-Host "`nACCESS TOKEN:"
+Write-Host "`nID TOKEN:"
 Write-Host "`n***`n"
 
 #CHECK
@@ -418,7 +411,7 @@ if ($stage -eq "dev") {
                 Write-Host "`nSuccess: Created a cognito user.`n`n \
                 You can now log into the Kibana server using the email address you provided (username) and your temporary password.`n \
                 You may have to verify your email address before logging in.`n \
-                The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.`n`n \
+                The URL for the Kibana server can be found in ./Info_Output.log in the 'ElasticSearchDomainKibanaEndpoint' entry.`n`n \
                 This URL will also be copied below:`n \
                 https:$ElasticSearchDomainKibanaEndpoint"
             }
@@ -493,7 +486,7 @@ for (; ; ) {
 Write-Host "`n`nSetup completed successfully."
 Write-Host "You can now access the FHIR APIs directly or through a service like POSTMAN.`n`n"
 Write-Host "For more information on setting up POSTMAN, please see the README file."
-Write-Host "All user details were stored in 'Info_Output.yml'.`n"
+Write-Host "All user details were stored in 'Info_Output.log'.`n"
 Write-Host "You can obtain new Cognito authorization tokens by using the init-auth.py script.`n"
 Write-Host "Syntax: "
 Write-Host "python3 scripts/init-auth.py <USER_POOL_APP_CLIENT_ID> <REGION>"
