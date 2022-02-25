@@ -9,7 +9,7 @@ phases:
         - npm install -g yarn
         - pip3 install --upgrade pip
         - pip3 install --upgrade awscliv2
-        - apt install jq -y
+        - apt install jq sudo -y
     build:
       commands:
         - ls -al
@@ -21,7 +21,7 @@ phases:
         - echo "STAGE_TYPE=$STAGE_TYPE"
         - echo "REGION=$REGION"
         - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
-        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --enableMultiTenancy --tenantIdClaimPath "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --tenantIdClaimValuePrefix "quentry:" --grantAccessAllTenantsScope "$ALL_TENANTS_SCOPE")
+        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && sudo ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --enableMultiTenancy --tenantIdClaimPath "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --tenantIdClaimValuePrefix "quentry:" --grantAccessAllTenantsScope "$ALL_TENANTS_SCOPE")
         - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.log"
         - |
           SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.log | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"
