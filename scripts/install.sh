@@ -471,7 +471,7 @@ yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}"
 echo -e "Deployed Successfully.\n"
 touch Info_Output.yml
 
-SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.yml
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.log
 
 #Read in variables from Info_Output.log
 eval $( parse_log Info_Output.log )
@@ -497,23 +497,36 @@ if [[ "$silentInstall" == "no" ]]; then
             echo ""
             echo "Okay, we'll need to create a cognito user using an email address and password."
             echo ""
-            aws cognito-idp sign-up \
-              --region "$region" \
-              --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
-              --username "$cognitoUsername" \
-              --password "$temp_cognito_p" \
-              --user-attributes Name="email",Value="$cognitoUsername" &&
-            echo -e "\nSuccess: Created a cognito user.\n\n \
-                    You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
-                    You may have to verify your email address before logging in.\n \
-                    The URL for the Kibana server can be found in ./Info_Output.log in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
-                    This URL will also be copied below:\n \
-                    $ElasticSearchDomainKibanaEndpoint"
-            break
-        else
-            echo -e "\nSorry about that--let's start over.\n"
-        fi
-    done
+            read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
+            echo -e "\n"
+            if `YesOrNo "Is $cognitoUsername your correct email?"`; then
+                echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
+                echo "  * 8-20 characters long"
+                echo "  * at least 1 lowercase character"
+                echo "  * at least 1 uppercase character"
+                echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
+                echo "  * at least 1 number character"
+                echo ""
+                temp_cognito_p=`get_valid_pass`
+                echo ""
+                aws cognito-idp sign-up \
+                --region "$region" \
+                --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
+                --username "$cognitoUsername" \
+                --password "$temp_cognito_p" \
+                --user-attributes Name="email",Value="$cognitoUsername" &&
+                echo -e "\nSuccess: Created a cognito user.\n\n \
+                        You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
+                        You may have to verify your email address before logging in.\n \
+                        The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
+                        This URL will also be copied below:\n \
+                        $ElasticSearchDomainKibanaEndpoint"
+                break
+            else
+                echo -e "\nSorry about that--let's start over.\n"
+            fi
+        done
+    fi
 fi
 cd ${PACKAGE_ROOT}
 ##Cloudwatch audit log mover
