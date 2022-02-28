@@ -204,6 +204,8 @@ function get_valid_pass(){
     echo "$s1"
 }
 
+ echo "Prepare for deploying AWS FHIR Works."
+
 #Change directory to that of the script (in case someone calls it from another folder)
 cd "${0%/*}"
 # Save parent directory
