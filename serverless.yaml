@@ -32,6 +32,12 @@ custom:
   useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy cleanly
   serverlessIfElse:
+      # If grantAccessAllTenantsScope is defined, add it to the api gateway to allow passthrough
+      - If: '"${self:custom.grantAccessAllTenantsScope}" != ""'
+        Set:
+          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+
       - If: '"${self:custom.enableMultiTenancy}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -137,6 +143,10 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
+            scopes: # must have both scopes
+              - 'openid'
+              - 'profile'
+              - 'aws.cognito.signin.user.admin'
           method: ANY
           path: /
           private: true
@@ -144,6 +154,10 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
+            scopes: # must have both scopes
+              - 'openid'
+              - 'profile'
+              - 'aws.cognito.signin.user.admin'
           method: ANY
           path: '{proxy+}'
           private: true
