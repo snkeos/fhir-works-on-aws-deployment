@@ -21,9 +21,7 @@ phases:
         - echo "STAGE_TYPE=$STAGE_TYPE"
         - echo "REGION=$REGION"
         - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
-        - whoami
-        - chmod +rwx ./fhirworks
-        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && chmod +rwx ./install.sh && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --enableMultiTenancy --tenantIdClaimPath "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --tenantIdClaimValuePrefix "quentry:" --grantAccessAllTenantsScope "$ALL_TENANTS_SCOPE")
+        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && chmod +rx ./install.sh && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --enableMultiTenancy --tenantIdClaimPath "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --tenantIdClaimValuePrefix "quentry:" --grantAccessAllTenantsScope "$ALL_TENANTS_SCOPE")
         - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.log"
         - |
           SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.log | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"

@@ -67,13 +67,10 @@ const esSearch = new ElasticSearchService(
 );
 const s3DataService = new S3DataService(dynamoDbDataService, fhirVersion, { enableMultiTenancy });
 
-const tenantIdClaimPath =
-    process.env.TENANT_ID_CLAIM_PATH === undefined ? '' : process.env.TENANT_ID_CLAIM_PATH;
+const tenantIdClaimPath = process.env.TENANT_ID_CLAIM_PATH === undefined ? '' : process.env.TENANT_ID_CLAIM_PATH;
 
 const tenantIdClaimValuePrefix =
-    process.env.TENANT_ID_CLAIM_VALUE_PREFIX === undefined
-        ? ''
-        : process.env.TENANT_ID_CLAIM_VALUE_PREFIX;
+    process.env.TENANT_ID_CLAIM_VALUE_PREFIX === undefined ? '' : process.env.TENANT_ID_CLAIM_VALUE_PREFIX;
 
 const grantAccessAllTenantsScope =
     process.env.GRANT_ACCESS_ALL_TENANTS_SCOPE === undefined ? '' : process.env.GRANT_ACCESS_ALL_TENANTS_SCOPE;
@@ -156,7 +153,7 @@ export function getCorsOrigins(): string | string[] | undefined {
         let cleanCorsOriginsArray: string[] = [];
 
         // Skip empty array elements, trim whitespaces and transform ALL_ORIGINS to *
-        corsOriginsArray.every(origin => {
+        corsOriginsArray.every((origin) => {
             const cleanedOrigin = origin.trim();
             if (cleanedOrigin.toUpperCase() === 'ALL_ORIGINS') {
                 cleanCorsOriginsArray = [];
