@@ -20,6 +20,10 @@ function usage(){
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
     echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
+    echo "    --enableMultiTenancy: If set multi tenancy is enabled."
+    echo "    --tenantIdClaimPath: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    echo "    --tenantIdClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    echo "    --grantAccessAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -181,6 +185,10 @@ fi
 #Default values
 stage="dev"
 region="us-west-2"
+enableMultiTenancy=false
+tenantIdClaimPath="" 
+tenantIdClaimValuePrefix="" 
+grantAccessAllTenantsScope="" 
 
 #Parse commandline args
 while [ "$1" != "" ]; do
@@ -190,6 +198,18 @@ while [ "$1" != "" ]; do
                             ;;
         -r | --region )     shift
                             region=$1
+                            ;;
+        --enableMultiTenancy )
+                            enableMultiTenancy=true
+                            ;;
+        --tenantIdClaimPath ) shift
+                            tenantIdClaimPath=$1
+                            ;;
+        --tenantIdClaimValuePrefix ) shift
+                            tenantIdClaimValuePrefix=$1
+                            ;;
+        --grantAccessAllTenantsScope ) shift
+                            grantAccessAllTenantsScope=$1
                             ;;
         -h | --help )       usage
                             exit
@@ -257,6 +277,12 @@ fi
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
 echo "  Region: $region"
+echo "  Multi Tenancy Enabled: $enableMultiTenancy"
+if [[ $enableMultiTenancy  == 'true' ]];  then
+    echo "  Tenant Id Claim Path: $tenantIdClaimPath"
+    echo "  Tenant Id Claim Value Prefix: $tenantIdClaimValuePrefix"
+    echo "  Grant access to all tenants scope: $grantAccessAllTenantsScope"
+fi
 echo ""
 if ! `YesOrNo "Are these settings correct?"`; then
     echo ""
@@ -297,12 +323,29 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
-yarn run serverless-deploy --region $region --stage $stage || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ $enableMultiTenancy == true ]]; then
+    mtArgs=(--enableMultiTenancy "true")
+
+    if [[ "$tenantIdClaimPath" != "" ]]; then
+        mtArgs+=(--tenantIdClaimPath $tenantIdClaimPath)
+        if [[ "$tenantIdClaimValuePrefix" != "" ]]; then
+            mtArgs+=(--tenantIdClaimValuePrefix $tenantIdClaimValuePrefix)
+        fi
+    fi
+
+    if [[ "$grantAccessAllTenantsScope" != "" ]]; then
+        mtArgs+=(--grantAccessAllTenantsScope $grantAccessAllTenantsScope)
+    fi
+else
+    mtArgs=()
+fi
+
+yarn run serverless-deploy --region $region --stage $stage "${mtArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
 touch Info_Output.log
-SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage && SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage > Info_Output.log
+SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage "${mtArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage "${mtArgs[@]}"  > Info_Output.log
 #The double call to serverless info was a bugfix from Steven Johnston
     #(may not be needed)
 
@@ -372,7 +415,7 @@ echo ""
 if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
     cd ${PACKAGE_ROOT}/auditLogMover
     yarn install --frozen-lockfile
-    yarn run serverless-deploy --region $region --stage $stage
+    yarn run serverless-deploy --region $region --stage $stage "${mtArgs[@]}" 
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
 fi

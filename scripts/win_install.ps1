@@ -5,6 +5,10 @@
 param (
     [string]$region = "us-west-2",
     [string]$stage = "dev",
+    [switch]$enableMultiTenancy = $false,
+    [string]$tenantIdClaimPath = "",
+    [string]$tenantIdClaimValuePrefix = "",
+    [string]$grantAccessAllTenantsScope = "",
     [switch]$help = $false
  )
 
@@ -16,6 +20,10 @@ function Usage {
     Write-Host "Optional Parameters:`n"
     Write-Host "    -stage: Set stage for deploying AWS services (Default: 'dev')"
     Write-Host "    -region: Set region for deploying AWS services (Default: 'us-west-2')"
+    Write-Host "    -enableMultiTenancy: If set, multi tenancy is enabled."
+    Write-Host "    -tenantIdClaimPath: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
+    Write-Host "    -tenantIdClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
+    Write-Host "    -grantAccessAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
     Write-Host "    -help: Displays this message`n`n"
 }
 
@@ -153,6 +161,32 @@ function Get-ValidPassword {
     Return $s1
 }
 
+function BuildServerlessCommandLineArgs($serverlessActions, $tokenClaim, $tokenClaimValuePrefix, $allTenantsScope) {
+
+    [string[]] $runServerlessArgs = @("run", "serverless")	
+    [string[]] $runServerlessParamsArgs = @("--region", $region, "--stage", $stage)	
+    if ( $enableMultiTenancy ) {
+        $runServerlessParamsArgs += ' --enableMultiTenancy true'
+    
+        if ( $tokenClaim -ne "" ) {  
+            $runServerlessParamsArgs += '--tenantIdClaimPath'
+            $runServerlessParamsArgs += $tokenClaim
+    
+            if ( $tokenClaimValuePrefix -ne "" ) {
+                $runServerlessParamsArgs += '--tenantIdClaimValuePrefix' 
+                $runServerlessParamsArgs += $tokenClaimValuePrefix
+            }
+        }
+    
+        if ( $allTenantsScope -ne "" ) {
+            $runServerlessParamsArgs += ' --grantAccessAllTenantsScope'
+            $runServerlessParamsArgs += $allTenantsScope
+        }
+    }
+    [string[]] $compositeCmdArgs = @($runServerlessArgs, $serverlessActions, $runServerlessParamsArgs)
+    Return $compositeCmdArgs
+}
+
 function Credentials-Error {
     Write-Host "Could not find any valid AWS credentials. This script requires credentials to be located on the SharedCredentialsFile at $HOME\.aws\credentials"
     Write-Host "You can configure credentials by running:"
@@ -235,6 +269,14 @@ if ($already_deployed){
 Write-Host "Setup will proceed with the following parameters: `n"
 Write-Host "  Stage: $stage"
 Write-Host "  Region: $region`n`n"
+Write-Host "  Multi Tenancy Enabled: $enableMultiTenancy"
+if ($enableMultiTenancy) {
+    Write-Host "  Tenant Id Claim Path: $tenantIdClaimPath"
+    Write-Host "  Tenant Id Claim Value Prefix: $tenantIdClaimValuePrefix"
+    Write-Host "  Grant access to all tenants scope: $grantAccessAllTenantsScope"
+}
+Write-Host "`n`n"
+
 do {
     $response = $Host.UI.PromptForChoice("", "Are these settings correct?", $options, $default)
     if ($response -eq 1) {
@@ -266,7 +308,8 @@ if ($SEL -eq $null){
 
 Write-Host "`n`nDeploying FHIR Server"
 Write-Host "(This may take some time, usually ~20-30 minutes)`n`n" 
-yarn run serverless-deploy --region $region --stage $stage
+$deployArgs = BuildServerlessCommandLineArgs "deploy" $tenantIdClaimPath $tenantIdClaimValuePrefix $grantAccessAllTenantsScope
+Start-Process yarn -ArgumentList $deployArgs -wait -NoNewWindow -PassThru
 
 if (-Not ($?) ) {
     Write-Host "Setting up FHIR Server failed. Please try again later."
@@ -276,7 +319,8 @@ Write-Host "Deployed Successfully.`n"
 
 rm Info_Output.log
 fc >> Info_Output.log
-yarn run serverless-info --verbose --region $region --stage $stage | Out-File -FilePath .\Info_Output.log
+$infoArgs = BuildServerlessCommandLineArgs [string[]]@("info", "--verbose") $tenantIdClaimPath $tenantIdClaimValuePrefix $grantAccessAllTenantsScope
+Start-Process yarn -ArgumentList $infoArgs -wait -NoNewWindow -PassThru -RedirectStandardOutput .\Info_Output.yml
 
 #Read in variables from Info_Output.log
 $UserPoolId = GetFrom-Log "UserPoolId"
@@ -385,7 +429,7 @@ for(;;) {
     } elseif ($yn -eq 0){ #yes
         Set-Location $rootDir\auditLogMover
         yarn install --frozen-lockfile
-        yarn run serverless-deploy --region $region --stage $stage
+        Start-Process yarn -ArgumentList $deployArgs -wait -NoNewWindow -PassThru
         Set-Location $rootDir
         Write-Host "`n`nSuccess."
         Break

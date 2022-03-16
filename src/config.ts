@@ -27,9 +27,17 @@ import getAllowListedSubscriptionEndpoints from './subscriptions/allowList';
 import RBACRules from './RBACRules';
 import { loadImplementationGuides } from './implementationGuides/loadCompiledIGs';
 
-const { IS_OFFLINE, ENABLE_MULTI_TENANCY, ENABLE_SUBSCRIPTIONS } = process.env;
+const { IS_OFFLINE, ENABLE_MULTI_TENANCY, USE_TENANT_SPECIFIC_URL, ENABLE_SUBSCRIPTIONS } = process.env;
 
 const enableMultiTenancy = ENABLE_MULTI_TENANCY === 'true';
+const useTenantSpecificUrl = USE_TENANT_SPECIFIC_URL === 'true';
+const tenantIdClaimPath =
+    process.env.TENANT_ID_CLAIM_PATH !== '' ? process.env.TENANT_ID_CLAIM_PATH : 'custom:tenantId';
+const tenantIdClaimValuePrefix =
+    process.env.TENANT_ID_CLAIM_VALUE_PREFIX !== '' ? process.env.TENANT_ID_CLAIM_VALUE_PREFIX : undefined;
+const grantAccessAllTenantsScope =
+    process.env.GRANT_ACCESS_ALL_TENANTS_SCOPE !== '' ? process.env.GRANT_ACCESS_ALL_TENANTS_SCOPE : undefined;
+
 const enableSubscriptions = ENABLE_SUBSCRIPTIONS === 'true';
 
 export const fhirVersion: FhirVersion = '4.0.1';
@@ -138,8 +146,10 @@ export const getFhirConfig = async (): Promise<FhirConfig> => {
         multiTenancyConfig: enableMultiTenancy
             ? {
                   enableMultiTenancy: true,
-                  useTenantSpecificUrl: true,
-                  tenantIdClaimPath: 'custom:tenantId',
+                  useTenantSpecificUrl,
+                  tenantIdClaimPath,
+                  tenantIdClaimValuePrefix,
+                  grantAccessAllTenantsScope,
               }
             : undefined,
     };

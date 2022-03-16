@@ -16,11 +16,26 @@ custom:
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
   enableMultiTenancy: ${opt:enableMultiTenancy, 'false'}
+  useTenantSpecificUrl: ${opt:useTenantSpecificUrl, 'true'}
+  tenantIdClaimPath: ${opt:tenantIdClaimPath, ""}
+  tenantIdClaimValuePrefix: ${opt:tenantIdClaimValuePrefix, ""}
+  grantAccessAllTenantsScope: ${opt:grantAccessAllTenantsScope, ""}
   enableSubscriptions: ${opt:enableSubscriptions, 'false'}
   logLevel: ${opt:logLevel, 'error'}
   enableESHardDelete: ${opt:enableESHardDelete, 'false'}
   patientCompartmentFileV3: 'patientCompartmentSearchParams.3.0.2.json'
   patientCompartmentFileV4: 'patientCompartmentSearchParams.4.0.1.json'
+  # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy with specific url cleanly
+  serverlessIfElse:
+      - If: '"${self:custom.enableMultiTenancy}" == "true" && "${self:custom.useTenantSpecificUrl}" == "true"'
+        Exclude:
+          - resources.extensions.ApiGatewayMethodMetadataGet
+        Set:
+          functions.fhirServer.events.0.http.path: '/tenant/{tenantId}/' 
+          functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
+        ElseExclude:
+            - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
   bundle:
     packager: yarn
     linting: false # We use our own linter
@@ -65,6 +80,10 @@ provider:
       - !ImportValue 'fhir-service-validator-lambda-${self:custom.stage}'
       - !Ref AWS::NoValue
     ENABLE_MULTI_TENANCY: !Ref EnableMultiTenancy
+    USE_TENANT_SPECIFIC_URL: !Ref UseTenantSpecificUrl
+    TENANT_ID_CLAIM_PATH: '${self:custom.tenantIdClaimPath}'
+    TENANT_ID_CLAIM_VALUE_PREFIX: '${self:custom.tenantIdClaimValuePrefix}'
+    GRANT_ACCESS_ALL_TENANTS_SCOPE: '${self:custom.grantAccessAllTenantsScope}'
     ENABLE_SUBSCRIPTIONS: !Ref EnableSubscriptions
     LOG_LEVEL: '${self:custom.logLevel}'
   apiKeys:
@@ -105,9 +124,6 @@ functions:
       - http:
           method: GET
           path: /metadata
-      - http:
-          method: GET
-          path: /tenant/{tenantId}/metadata
     handler: src/index.handler
     provisionedConcurrency: 5
     environment:
@@ -276,6 +292,13 @@ resources:
           - 'true'
           - 'false'
         Description: whether or not to enable multi-tenancy
+      UseTenantSpecificUrl:
+        Type: String
+        Default: ${self:custom.useTenantSpecificUrl}
+        AllowedValues:
+          - 'true'
+          - 'false'
+        Description: whether or not to enable the use a tenant specific url
       EnableSubscriptions:
         Type: String
         Default: ${self:custom.enableSubscriptions}
@@ -1078,6 +1101,13 @@ resources:
               - id: W45
                 reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
 
+      ApiGatewayMethodTenantTenantidVarMetadataGet:
+        Metadata:
+          cfn_nag:
+            rules_to_suppress:
+              - id: W45
+                reason: 'This API endpoint should not require authentication (due to the FHIR spec)'
+
   - ${file(cloudformation/alarms.yaml)}
   - ${file(cloudformation/kms.yaml)}
   - ${file(cloudformation/elasticsearch.yaml)}
@@ -1157,3 +1187,4 @@ plugins:
   - serverless-step-functions
   - serverless-bundle
   - serverless-offline
+  - serverless-plugin-ifelse
