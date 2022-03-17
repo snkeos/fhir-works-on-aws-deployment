@@ -155,4 +155,39 @@ export const getFhirConfig = async (): Promise<FhirConfig> => {
     };
 };
 
+export function getCorsOrigins(): string | string[] | undefined {
+    const corsOrigins =
+        process.env.CORS_ORIGINS === '[object Object]' || process.env.CORS_ORIGINS === undefined
+            ? undefined
+            : process.env.CORS_ORIGINS;
+
+    // Check, if there are any cors origins set
+    if (corsOrigins !== undefined) {
+        const corsOriginsArray: string[] = corsOrigins.split(',');
+        let cleanCorsOriginsArray: string[] = [];
+
+        // Skip empty array elements, trim whitespaces and transform ALL_ORIGINS to *
+        corsOriginsArray.every((origin) => {
+            const cleanedOrigin = origin.trim();
+            if (cleanedOrigin.toUpperCase() === 'ALL_ORIGINS') {
+                cleanCorsOriginsArray = [];
+                cleanCorsOriginsArray.push('*');
+                return false;
+            }
+            if (cleanedOrigin.length !== 0) {
+                cleanCorsOriginsArray.push(cleanedOrigin);
+            }
+            return true;
+        });
+
+        // If there is only a sinple entry, just return the string itself
+        if (cleanCorsOriginsArray.length === 1) {
+            return cleanCorsOriginsArray[0];
+        }
+
+        return cleanCorsOriginsArray;
+    }
+    return undefined;
+}
+
 export const genericResources = baseResources;

@@ -11,6 +11,7 @@ custom:
   exportRequestTableName: 'export-request-${self:custom.stage}'
   exportRequestTableJobStatusIndex: 'jobStatus-index'
   stage: ${opt:stage, self:provider.stage}
+  stageType: ${opt:stageType, ""}
   region: ${opt:region, self:provider.region}
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
@@ -25,8 +26,19 @@ custom:
   enableESHardDelete: ${opt:enableESHardDelete, 'false'}
   patientCompartmentFileV3: 'patientCompartmentSearchParams.3.0.2.json'
   patientCompartmentFileV4: 'patientCompartmentSearchParams.4.0.1.json'
+  extUserPoolId: ${opt:extUserPoolId, ""}
+  extUserPoolClientId: ${opt:extUserPoolClientId, ""}
+  extUserPoolDomain: ${opt:extUserPoolDomain, ""}
+  corsOrigins: ${opt:corsOrigins, ""}
+  useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy with specific url cleanly
   serverlessIfElse:
+      # If grantAccessAllTenantsScope is defined, add it to the api gateway to allow passthrough
+      - If: '"${self:custom.grantAccessAllTenantsScope}" != ""'
+        Set:
+          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+
       - If: '"${self:custom.enableMultiTenancy}" == "true" && "${self:custom.useTenantSpecificUrl}" == "true"'
         Exclude:
           - resources.extensions.ApiGatewayMethodMetadataGet
@@ -36,6 +48,27 @@ custom:
           functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
         ElseExclude:
             - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+
+      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useTenantSpecificUrl}" == "true" && "${self:custom.enableMultiTenancy}" == "true"'          
+        Set:
+          functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
+          functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
+          functions.fhirServer.events.5.http.path: /tenant/{tenantId}/metadata
+
+      - If: '"${self:custom.corsOrigins}" == ""'
+        Exclude:
+          - functions.fhirServer.events.3 
+          - functions.fhirServer.events.4
+          - functions.fhirServer.events.5 
+
+      - If: '"${self:custom.useApiKeys}" == "false"'
+        Exclude:
+          - provider.apiKeys
+        Set:
+          functions.fhirServer.events.0.http.private: false
+          functions.fhirServer.events.1.http.private: false
+          functions.fhirServer.events.2.http.private: false
+
   bundle:
     packager: yarn
     linting: false # We use our own linter
@@ -70,8 +103,7 @@ provider:
     EXPORT_REQUEST_TABLE_JOB_STATUS_INDEX: '${self:custom.exportRequestTableJobStatusIndex}'
     FHIR_BINARY_BUCKET: !Ref FHIRBinaryBucket
     ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
-    OAUTH2_DOMAIN_ENDPOINT:
-      !Join ['', ['https://', !Ref UserPoolDomain, !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
+    OAUTH2_DOMAIN_ENDPOINT: !Join ['', ['https://', !If [ isUsingDefaultUserPool, !Ref UserPoolDomain, !Ref ExtUserPoolDomain ], !Sub '.auth.${AWS::Region}.amazoncognito.com/oauth2']]
     EXPORT_RESULTS_BUCKET: !Ref BulkExportResultsBucket
     EXPORT_RESULTS_SIGNER_ROLE_ARN: !GetAtt ExportResultsSignerRole.Arn
     CUSTOM_USER_AGENT: 'AwsSolution/SO0128/GH-v4.2.0'
@@ -111,6 +143,11 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
+            scopes: # must have both scopes
+              - 'openid'
+              - 'profile'
+              - 'aws.cognito.signin.user.admin'
+
           method: ANY
           path: /
           private: true
@@ -118,11 +155,25 @@ functions:
           authorizer:
             type: COGNITO_USER_POOLS
             authorizerId: !Ref ApiGatewayAuthorizer
+            scopes: # must have both scopes
+              - 'openid'
+              - 'profile'
+              - 'aws.cognito.signin.user.admin'
+
           method: ANY
           path: '{proxy+}'
           private: true
       - http:
           method: GET
+          path: /metadata
+      - http:
+          method: OPTIONS
+          path: /
+      - http:
+          method: OPTIONS
+          path: '{proxy+}'
+      - http:
+          method: OPTIONS
           path: /metadata
     handler: src/index.handler
     provisionedConcurrency: 5
@@ -263,6 +314,13 @@ resources:
         Type: String
         Default: ${self:custom.stage}
         Description: 'The deployment stage (e.g. dev, qa, prod). Default: dev'
+      StageType:
+        Type: String
+        Default: ${self:custom.stageType}
+        AllowedValues: 
+          - "dev"
+          - "prod"
+        Description: 'Specifies type of the deployment stage. The following values are allowed( dev, prod). Default: dev'
       CognitoOAuthDefaultRedirectURL:
         Type: String
         Default: ${self:custom.oauthRedirect}
@@ -314,11 +372,26 @@ resources:
           - 'info'
           - 'warn'
           - 'error'
+      ExtUserPoolId: 
+        Type: String
+        Default: ${self:custom.extUserPoolId}
+        Description: Sets the identifier of an external Cognito UserPool. 
+      ExtUserPoolClientId: 
+        Type: String
+        Default: ${self:custom.extUserPoolClientId}
+        Description: Sets the identifier of the client, which belongs to the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
+      ExtUserPoolDomain: 
+        Type: String
+        Default: ${self:custom.extUserPoolDomain}
+        Description: Sets the domain of the specified external Cognito UserPool, see ${self:custom.extUserPoolId}.
+
   - Conditions:
-      isDev: !Equals [!Ref Stage, 'dev']
+      isDev: !Or [ !Equals [!Ref Stage, 'dev'], !Equals [ !Ref StageType, 'dev' ] ]
       isNotDev: !Not [Condition: isDev]
       isUsingHapiValidator: !Equals [!Ref UseHapiValidator, 'true']
       isMultiTenancyEnabled: !Equals [!Ref EnableMultiTenancy, 'true']
+      isUsingDefaultUserPool: !Or [ !Equals [ !Ref ExtUserPoolId, "" ],  !Equals [ !Ref ExtUserPoolClientId, "" ] ,  !Equals [ !Ref ExtUserPoolDomain, "" ] ]
+
   - Mappings:
       # For the most up to date ec2 types see: https://aws.amazon.com/opensearch-service/pricing/
       RegionMap:
@@ -399,10 +472,13 @@ resources:
               - id: W28
                 reason: 'We want to set the table explicit name'
         Type: AWS::DynamoDB::Table
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.resourceTableName}'
+          ProvisionedThroughput:
+            ReadCapacityUnits: "30"
+            WriteCapacityUnits: "30"
           AttributeDefinitions:
             - AttributeName: id
               AttributeType: S
@@ -415,7 +491,6 @@ resources:
               KeyType: HASH
             - AttributeName: vid
               KeyType: RANGE
-          BillingMode: PAY_PER_REQUEST
           StreamSpecification:
             StreamViewType: NEW_AND_OLD_IMAGES
           PointInTimeRecoverySpecification:
@@ -441,6 +516,9 @@ resources:
                   KeyType: RANGE
               Projection:
                 ProjectionType: ALL
+              ProvisionedThroughput:
+                ReadCapacityUnits: "30"
+                WriteCapacityUnits: "30"
       ExportRequestDynamoDBTable:
         Metadata:
           cfn_nag:
@@ -490,8 +568,8 @@ resources:
                 reason: 'We want to set the table explicit name'
               - id: W78
                 reason: 'Backup not explicitly needed'
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
         Properties:
           TableName: '${self:custom.oldResourceTableName}'
           AttributeDefinitions:
@@ -520,7 +598,7 @@ resources:
           ProviderARNs:
             - !Join [
                 '',
-                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !Ref UserPool],
+                [!Sub 'arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/', !If [ isUsingDefaultUserPool, !Ref UserPool, !Ref ExtUserPoolId ]],
               ]
       FHIRBinaryBucket:
         Type: AWS::S3::Bucket
@@ -1117,10 +1195,20 @@ resources:
   - Outputs:
       UserPoolId:
         Description: User pool id for the provisioning users.
-        Value: !Ref UserPool
+        Value: 
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPool
+            - !Ref ExtUserPoolId
+
       UserPoolAppClientId:
         Description: App client id for the provisioning users.
-        Value: !Ref UserPoolClient
+        Value:
+          !If 
+            - isUsingDefaultUserPool
+            - !Ref UserPoolClient
+            - !Ref ExtUserPoolClientId
+
       FHIRBinaryBucket:
         Description: S3 Bucket for storing Binary Objects
         Value: !Ref FHIRBinaryBucket

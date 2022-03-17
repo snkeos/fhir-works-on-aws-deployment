@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+    install:
+      runtime-versions:
+        nodejs: 14
+        python: 3.8
+      commands:
+        - npm install -g yarn
+        - pip3 install --upgrade pip
+        - pip3 install --upgrade awscliv2
+        - apt install jq -y
+    build:
+      commands:
+        - ls -al
+        - tar -xzf fhirworks.tgz
+        - POOL_ID=$CloudDataHubUserPoolId && echo "POOL_ID=$POOL_ID"
+        - CLIENT_ID=$CloudDataHubUserPoolClientId && echo "CLIENT_ID=$CLIENT_ID"
+        - echo "POOL_DOMAIN=$POOL_DOMAIN"
+        - echo "STAGE_NAME=$STAGE_NAME"
+        - echo "STAGE_TYPE=$STAGE_TYPE"
+        - echo "REGION=$REGION"
+        - echo "ALL_TENANTS_SCOPE=$ALL_TENANTS_SCOPE"
+        - (cd fhirworks/fhir-works-on-aws-deployment/scripts && chmod +rx ./install.sh && ./install.sh --silentInstall "yes" --stage "$STAGE_NAME" --stagetype "$STAGE_TYPE" --region "$REGION" --pool "$POOL_ID" --poolclient "$CLIENT_ID" --pooldomain "$POOL_DOMAIN" --enableMultiTenancy --tenantIdClaimPath "cognito:groups" --corsOrigins "ALL_ORIGINS" --useApiKeys "no" --tenantIdClaimValuePrefix "quentry:" --grantAccessAllTenantsScope "$ALL_TENANTS_SCOPE")
+        - cat "fhirworks/fhir-works-on-aws-deployment/Info_Output.log"
+        - |
+          SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.log | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"
+          aws ssm put-parameter --name "$STAGE_NAME-fhirworks-url" --value "$SERVICE_ENDPOINT" --type "String" --overwrite
+          echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
+
+artifacts:
+  files:
+    - fhirworks/fhir-works-on-aws-deployment/Info_Output.log
+    - fw-deploy-output.json

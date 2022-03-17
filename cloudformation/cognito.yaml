@@ -6,6 +6,7 @@
 Resources:
   UserPool:
     Type: AWS::Cognito::UserPool
+    Condition: isUsingDefaultUserPool
     Properties:
       AccountRecoverySetting:
         RecoveryMechanisms:
@@ -26,6 +27,7 @@ Resources:
           Name: tenantId
   UserPoolClient:
     Type: AWS::Cognito::UserPoolClient
+    Condition: isUsingDefaultUserPool
     Properties:
       AllowedOAuthFlows:
         - code
@@ -47,12 +49,14 @@ Resources:
         - COGNITO
       PreventUserExistenceErrors: ENABLED
   UserPoolDomain:
+    Condition: isUsingDefaultUserPool
     Type: AWS::Cognito::UserPoolDomain
     Properties:
       Domain: !Ref UserPoolClient
       UserPoolId: !Ref UserPool
   PractitionerUserGroup:
     Type: AWS::Cognito::UserPoolGroup
+    Condition: isUsingDefaultUserPool
     Properties:
       Description: This is a member of the hospital staff, who directly helps patients
       GroupName: practitioner
@@ -60,6 +64,7 @@ Resources:
       UserPoolId: !Ref UserPool
   NonPractitionerUserGroup:
     Type: AWS::Cognito::UserPoolGroup
+    Condition: isUsingDefaultUserPool
     Properties:
       Description: This is a member of the hospital staff who needs access to non-medical record
       GroupName: non-practitioner
@@ -67,6 +72,7 @@ Resources:
       UserPoolId: !Ref UserPool
   AuditorUserGroup:
     Type: AWS::Cognito::UserPoolGroup
+    Condition: isUsingDefaultUserPool
     Properties:
       Description: Someone who needs read, v_read and search access on patients
       GroupName: auditor

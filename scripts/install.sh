@@ -11,6 +11,11 @@
 #   -What if someone doesn't have AWS CLI installed?
 #   -What if nothing is entered in aws configure?
 
+if [ "${BASH_VERSINFO:-0}" -lt 4 ] ; then
+  echo "Minimal bash version to run this script is 4. Current version is $BASH_VERSINFO"
+  exit 1
+fi;
+
 ##Usage information
 function usage(){
     echo ""
@@ -19,11 +24,18 @@ function usage(){
     echo "Optional Parameters:"
     echo ""
     echo "    --stage (-s): Set stage for deploying AWS services (Default: 'dev')"
+    echo "    --stagetype (-t): Set the type of the deployment. Allowed values are: dev, prod (Default: 'dev')"
     echo "    --region (-r): Set region for deploying AWS services (Default: 'us-west-2')"
+    echo "    --pool (-p): Set the id of an external cognito user pool (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --poolclient (-c): Set the id of an external cognito user pool client (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
+    echo "    --pooldomain (-d): Set the id of an external cognito user pool domain (Default: '') [All three pool, poolclient and pooldomain need to be set in order to embed an external user pool]"
     echo "    --enableMultiTenancy: If set multi tenancy is enabled."
     echo "    --tenantIdClaimPath: Set the access token claim which is used to grant/deny the access on a particular tenant data pool. If no claim is set tenant base access control is disabled (Default: '')"
     echo "    --tenantIdClaimValuePrefix: If a claim is used, which also not only contains tenant related values (e.g. 'cognito:groups'), an optional tenant prefix for matching can be specified (Default: '')"
     echo "    --grantAccessAllTenantsScope: If value set and this value is also included in the scope claim the access token grants access to availabel tenants (Default: '')"
+    echo "    --corsOrigins (-o): Set comma separated list of origin urls, which is used to perform Cross-Origin Resource Sharing (For all urls '*', please use 'ALL_ORIGINS' )"
+    echo "    --useApiKeys (-k): Specifies whether to enable api keys or not. Allowed values are: yes, no (Default: 'yes')"
+    echo "    --silentInstall (-i): Specifies whether to perform the installation silently or not, Allowed values are: yes, no  (Default: 'no')"
     echo "    --help (-h): Displays this message"
     echo ""
     echo ""
@@ -40,6 +52,27 @@ function YesOrNo() {
         done
 }
 
+function YesOrNoSilentDefault() {
+    local silent="$1" 
+    local default="$2" 
+    local textmsg="$3" 
+
+    if [ "$silent" != "no" ]; then 
+        case "$default" in
+            [yY]|[yY][eE][sS]) return 0 ;;
+            [nN]|[nN][oO]) return 1 ;;
+        esac
+    else
+        while :
+        do
+            read -p "$textmsg (yes/no): " answer
+            case "${answer}" in
+                [yY]|[yY][eE][sS]) exit 0 ;;
+                [nN]|[nN][oO]) exit 1 ;;
+            esac
+        done
+    fi
+}
 function install_dependencies(){
     #Dependencies:
         #   nodejs  ->  npm   -> serverless
@@ -54,19 +87,19 @@ function install_dependencies(){
         # Identify kernel release
         KERNEL_RELEASE=$(uname -r)
         #Update package manager
-        sudo $PKG_MANAGER update
-        sudo $PKG_MANAGER upgrade
+        sudo $PKG_MANAGER update -y
+        sudo $PKG_MANAGER upgrade -y
 
         #Yarn depends on node version >= 12.0.0
         if [ "$basepkg" == "apt-get" ]; then
-            curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
-            sudo apt-get install nodejs -y
+            curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+            sudo apt-get --assume-yes install nodejs -y
         elif [ "$basepkg" == "yum" ]; then
             if [[ $KERNEL_RELEASE =~ amzn2.x86_64 ]]; then
-                curl -sL https://rpm.nodesource.com/setup_12.x | bash -
+                curl -sL https://rpm.nodesource.com/setup_14.x | bash -
                 yum install nodejs -y
             else
-                yum install nodejs12 -y
+                yum install nodejs14 -y
             fi
         fi
 
@@ -184,11 +217,19 @@ fi
 
 #Default values
 stage="dev"
+stageType=""
 region="us-west-2"
+extUserPool=""
+extUserPoolClient=""
+extUserPoolDomain=""
 enableMultiTenancy=false
 tenantIdClaimPath="" 
 tenantIdClaimValuePrefix="" 
 grantAccessAllTenantsScope="" 
+hasExtUserPoolParameters=false
+corsOrigins=""
+silentInstall="no"
+useApiKeys="yes"
 
 #Parse commandline args
 while [ "$1" != "" ]; do
@@ -196,8 +237,21 @@ while [ "$1" != "" ]; do
         -s | --stage )      shift
                             stage=$1
                             ;;
+        -t | --stagetype )  shift
+                            stageType=$1
+                            ;;
+
         -r | --region )     shift
                             region=$1
+                            ;;
+        --pool )            shift
+                            extUserPool=$1
+                            ;;
+        --poolclient )      shift
+                            extUserPoolClient=$1
+                            ;;
+        --pooldomain )      shift
+                            extUserPoolDomain=$1
                             ;;
         --enableMultiTenancy )
                             enableMultiTenancy=true
@@ -211,6 +265,15 @@ while [ "$1" != "" ]; do
         --grantAccessAllTenantsScope ) shift
                             grantAccessAllTenantsScope=$1
                             ;;
+        --corsOrigins )     shift
+                            corsOrigins=$1
+                            ;;
+        --silentInstall )   shift
+                            silentInstall=$1
+                            ;;
+        --useApiKeys )      shift
+                            useApiKeys=$1
+                            ;;
         -h | --help )       usage
                             exit
                             ;;
@@ -220,9 +283,29 @@ while [ "$1" != "" ]; do
     shift
 done
 
+if [[ ${useApiKeys,,}  == "yes" ]];  then
+apiKeysEnabled="true"
+else
+apiKeysEnabled="false"
+fi
+
+if [[ $stage == 'dev' || $stageType == 'dev' ]] ; then
+isProd="no"
+else
+isProd="yes"
+fi
 clear
 
 command -v aws >/dev/null 2>&1 || { echo >&2 "AWS CLI cannot be found. Please install or check your PATH.  Aborting."; exit 1; }
+
+if [[ "$extUserPool" != "" && "$extUserPoolClient"!="" && "$extUserPoolDomain" != "" ]] ; then
+    hasExtUserPoolParameters=true
+fi
+#Check whether the input parameters of the optional external user pool are set correctly and completely
+if ! [[ ("$extUserPool" == "" && "$extUserPoolClient"=="" && "$extUserPoolDomain" == "" ) || ($hasExtUserPoolParameters  == true ) ]] ;  then
+    echo "Invalid user pool input parameters. If external user pool shall be used, the following parameters (--pool, --poolclient and --pooldomain) must be set"
+    exit 1
+fi
 
 if ! `aws sts get-caller-identity >/dev/null 2>&1`; then
     echo "Could not find any valid AWS credentials. You can configure credentials by running 'aws configure'. If running this script with sudo you must configure your awscli with 'sudo aws configure'"
@@ -235,8 +318,8 @@ echo -e "\nFound AWS credentials for the following User/Role:\n"
 aws sts get-caller-identity
 echo -e "\n"
 
-if ! `YesOrNo "Is this the correct User/Role for this deployment?"`; then
-  exit 1
+if ! `YesOrNoSilentDefault "$silentInstall" "yes" "Is this the correct User/Role for this deployment?"`; then
+    exit 1
 fi
 
 #Check to make sure the server isn't already deployed
@@ -252,8 +335,7 @@ if $already_deployed; then
         echo "FHIR Server already exists!"
         echo -e "Would you like to remove the current server and redeploy?\n"
     fi
-
-    if `YesOrNo "Do you want to continue with redeployment?"`; then
+    if `YesOrNoSilentDefault "$silentInstall" "yes" "Do you want to continue with redeployment?"`; then
         echo -e "\nOkay, let's redeploy the server.\n"
     else
         if ! $fail; then
@@ -276,15 +358,41 @@ fi
 
 echo -e "Setup will proceed with the following parameters: \n"
 echo "  Stage: $stage"
+if [[ "$stageType" != "" ]]; then
+    echo "  Stage type: $stageType"
+else
+    echo "  No stage type was set."
+fi
 echo "  Region: $region"
+
+if [[ $hasExtUserPoolParameters  == true ]];  then
+    echo "  External Userpool: $extUserPool"
+    echo "  External Userpool Client: $extUserPoolClient"
+    echo "  External Userpool Domain: $extUserPoolDomain"
+else
+    echo "  Default User pool is created for AWS FHIR Works."
+fi
 echo "  Multi Tenancy Enabled: $enableMultiTenancy"
 if [[ $enableMultiTenancy  == 'true' ]];  then
     echo "  Tenant Id Claim Path: $tenantIdClaimPath"
     echo "  Tenant Id Claim Value Prefix: $tenantIdClaimValuePrefix"
     echo "  Grant access to all tenants scope: $grantAccessAllTenantsScope"
 fi
+if [[ $corsOrigins  != "" ]];  then
+    echo "  Cross-Origin Resource Sharing enabled for origins: $corsOrigins"
+else
+    echo "  Cross-Origin Resource Sharing disabled."
+fi
+
+if [[ $apiKeysEnabled  == "true" ]];  then
+    echo "  API Keys are enabled. "
+else
+    echo "  API Keys are disabled."
+fi
+
 echo ""
-if ! `YesOrNo "Are these settings correct?"`; then
+
+if ! `YesOrNoSilentDefault "$silentInstall" "yes" "Are these settings correct?"`; then
     echo ""
     usage
     exit 1
@@ -294,7 +402,7 @@ if [ "$DOCKER" != "true" ]; then
     echo -e "\nIn order to deploy the server, the following dependencies are required:"
     echo -e "\t- nodejs\n\t- npm\n\t- python3\n\t- yarn"
     echo -e "\nThese dependencies will be installed (if not already present)."
-    if ! `YesOrNo "Would you like to continue?"`; then
+    if ! `YesOrNoSilentDefault "$silentInstall" "yes" "Would you like to continue?"`; then
         echo "Exiting..."
         exit 1
     fi
@@ -323,6 +431,17 @@ fi
 
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
+if [[ $hasExtUserPoolParameters  == true ]];  then
+    extUserPoolArgs=(--extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain)
+else
+    extUserPoolArgs=()
+fi
+if [[ "$stageType" != "" ]]; then
+    stageTypeArgs=(--stageType $stageType)
+else
+    stageTypeArgs=()
+fi
+
 if [[ $enableMultiTenancy == true ]]; then
     mtArgs=(--enableMultiTenancy "true")
 
@@ -340,14 +459,21 @@ else
     mtArgs=()
 fi
 
-yarn run serverless-deploy --region $region --stage $stage "${mtArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+if [[ $corsOrigins  != "" ]];  then
+    corsOriginsArgs=(--corsOrigins $corsOrigins)
+else
+    corsOriginsArgs=()
+fi
+
+useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
+
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
-touch Info_Output.log
-SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage "${mtArgs[@]}" && SLS_DEPRECATION_DISABLE=* yarn run serverless-info --verbose --region $region --stage $stage "${mtArgs[@]}"  > Info_Output.log
-#The double call to serverless info was a bugfix from Steven Johnston
-    #(may not be needed)
+touch Info_Output.yml
+
+SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.log
 
 #Read in variables from Info_Output.log
 eval $( parse_log Info_Output.log )
@@ -365,42 +491,44 @@ python3 provision-user.py "$UserPoolId" "$UserPoolAppClientId" "$region" >/dev/n
 echo -e "\n***\n\n"
 
 # #Set up Cognito user for Kibana server (only created if stage is dev)
-if [ $stage == 'dev' ]; then
-    echo "In order to be able to access the Kibana server for your ElasticSearch Service Instance, you need create a cognito user."
-    echo -e "You can set up a cognito user automatically through this install script, \nor you can do it manually via the Cognito console.\n"
-    while `YesOrNo "Do you want to set up a cognito user now?"`; do
-        echo ""
-        echo "Okay, we'll need to create a cognito user using an email address and password."
-        echo ""
-        read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
-        echo -e "\n"
-        if `YesOrNo "Is $cognitoUsername your correct email?"`; then
-            echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
-            echo "  * 8-20 characters long"
-            echo "  * at least 1 lowercase character"
-            echo "  * at least 1 uppercase character"
-            echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
-            echo "  * at least 1 number character"
+if [[ "$silentInstall" == "no" ]]; then
+    if [[ $stage == 'dev' || $stageType == 'dev' ]]; then
+        echo "In order to be able to access the Kibana server for your ElasticSearch Service Instance, you need create a cognito user."
+        echo -e "You can set up a cognito user automatically through this install script, \nor you can do it manually via the Cognito console.\n"
+        while `YesOrNo "Do you want to set up a cognito user now?"`; do
             echo ""
-            temp_cognito_p=`get_valid_pass`
+            echo "Okay, we'll need to create a cognito user using an email address and password."
             echo ""
-            aws cognito-idp sign-up \
-              --region "$region" \
-              --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
-              --username "$cognitoUsername" \
-              --password "$temp_cognito_p" \
-              --user-attributes Name="email",Value="$cognitoUsername" &&
-            echo -e "\nSuccess: Created a cognito user.\n\n \
-                    You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
-                    You may have to verify your email address before logging in.\n \
-                    The URL for the Kibana server can be found in ./Info_Output.log in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
-                    This URL will also be copied below:\n \
-                    $ElasticSearchDomainKibanaEndpoint"
-            break
-        else
-            echo -e "\nSorry about that--let's start over.\n"
-        fi
-    done
+            read -p "Enter your email address (<youremail@address.com>): " cognitoUsername
+            echo -e "\n"
+            if `YesOrNo "Is $cognitoUsername your correct email?"`; then
+                echo -e "\n\nPlease create a temporary password. Passwords must satisfy the following requirements: "
+                echo "  * 8-20 characters long"
+                echo "  * at least 1 lowercase character"
+                echo "  * at least 1 uppercase character"
+                echo "  * at least 1 special character (Any of the following: '!@#$%^\&*()[]_+-\")"
+                echo "  * at least 1 number character"
+                echo ""
+                temp_cognito_p=`get_valid_pass`
+                echo ""
+                aws cognito-idp sign-up \
+                --region "$region" \
+                --client-id "$ElasticSearchKibanaUserPoolAppClientId" \
+                --username "$cognitoUsername" \
+                --password "$temp_cognito_p" \
+                --user-attributes Name="email",Value="$cognitoUsername" &&
+                echo -e "\nSuccess: Created a cognito user.\n\n \
+                        You can now log into the Kibana server using the email address you provided (username) and your temporary password.\n \
+                        You may have to verify your email address before logging in.\n \
+                        The URL for the Kibana server can be found in ./Info_Output.yml in the 'ElasticSearchDomainKibanaEndpoint' entry.\n\n \
+                        This URL will also be copied below:\n \
+                        $ElasticSearchDomainKibanaEndpoint"
+                break
+            else
+                echo -e "\nSorry about that--let's start over.\n"
+            fi
+        done
+    fi
 fi
 cd ${PACKAGE_ROOT}
 ##Cloudwatch audit log mover
@@ -412,14 +540,15 @@ It also includes the Cognito user that made the request."
 echo -e "\nYou can also set up the server to archive logs older than 7 days into S3 and delete those logs from Cloudwatch Logs."
 echo "You can also do this later manually, if you would prefer."
 echo ""
-if `YesOrNo "Would you like to set the server to archive logs older than 7 days?"`; then
+
+if `YesOrNoSilentDefault "$silentInstall" "$isProd" "Would you like to set the server to archive logs older than 7 days?"`; then
     cd ${PACKAGE_ROOT}/auditLogMover
+        
     yarn install --frozen-lockfile
-    yarn run serverless-deploy --region $region --stage $stage "${mtArgs[@]}" 
+    yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}"
     cd ${PACKAGE_ROOT}
     echo -e "\n\nSuccess."
 fi
-
 
 #DynamoDB Table Backups
 echo -e "\n\nWould you like to set up daily DynamoDB Table backups?\n"
@@ -427,7 +556,7 @@ echo "Selecting 'yes' below will set up backups using the default setup from the
 echo -e "DynamoDB Table backups can also be set up later. See the README file for more information.\n"
 echo "Note: This will deploy an additional stack, and can lead to increased costs to run this server."
 echo ""
-if `YesOrNo "Would you like to set up backups now?"`; then
+if `YesOrNoSilentDefault "$silentInstall" "$isProd" "Would you like to set up backups now?"`; then
     cd ${PACKAGE_ROOT}
     aws cloudformation create-stack --stack-name fhir-server-backups \
     --template-body file://cloudformation/backup.yaml \
@@ -437,7 +566,6 @@ if `YesOrNo "Would you like to set up backups now?"`; then
     echo "fhir-server-backups in ${region} region."
     echo "Backups are configured to be automatically performed at 5:00 UTC, if deployment succeeded."
 fi
-
 
 echo -e "\n\nSetup completed successfully."
 echo -e "You can now access the FHIR APIs directly or through a service like POSTMAN.\n\n"

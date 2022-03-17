@@ -1,0 +1,36 @@
+version: 0.2
+
+phases:
+    install:
+      runtime-versions:
+        nodejs: 14
+      commands:
+        - npm install -g yarn
+        - apt install git -y
+    build:
+      commands:
+        # AWS doesn't like symlinks, so we have to go around this
+        - PACKAGE=../fhirworks
+
+        - mkdir $PACKAGE
+        - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
+
+        - echo "PACKAGE=$PACKAGE"
+        - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo - FhirWorksInterfaceGitHubBranch=$FhirWorksInterfaceGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch && yarn install)
+        - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo - FhirWorksAuthzRBACGitHubBranch=$FhirWorksAuthzRBACGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch && yarn install)
+        - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo - FhirWorksRoutingGitHubBranch=$FhirWorksRoutingGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch && yarn install)
+        - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo - FhirWorksSearchESGitHubBranch=$FhirWorksSearchESGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch && yarn install)
+        - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch && yarn install)
+
+        - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
+        - tar -cvzf fhirworks.tgz $PACKAGE
+
+artifacts:
+  files:
+    - 'fhirworks.tgz'
+    - 'buildspec-deploy.yml'
