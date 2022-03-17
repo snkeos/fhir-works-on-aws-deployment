@@ -85,7 +85,7 @@ Resources:
   SubscriptionsTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: 'SubscriptionsTopic'
+      TopicName: !Sub '${AWS::StackName}-SubscriptionsTopic'
       KmsMasterKeyId: !Ref SubscriptionsKey
 
   RestHookSubscription:
