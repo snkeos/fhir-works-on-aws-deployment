@@ -27,7 +27,7 @@ phases:
         - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch && yarn install && yarn run test)
 
-        - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install && yarn run int-test)
+        - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - tar -cvzf fhirworks.tgz $PACKAGE
 
 artifacts:
