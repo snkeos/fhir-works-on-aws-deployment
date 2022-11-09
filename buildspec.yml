@@ -43,5 +43,5 @@ reports:
   cdh_test_report: 
     files:
      - fhir-works-on-aws-interface-reports.xml
-    base-directory: ./fhirworks/test-reports
+    base-directory: ../fhirworks/test-reports
     file-format: JUNITXML
