@@ -17,15 +17,15 @@ phases:
 
         - echo "PACKAGE=$PACKAGE"
         - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo - FhirWorksInterfaceGitHubBranch=$FhirWorksInterfaceGitHubBranch"
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch && yarn install && yarn add --dev jest-junit && yarn run test)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch && yarn install && yarn run test)
         - echo "FhirWorksAuthzRBACGitHubRepo=$FhirWorksAuthzRBACGitHubRepo - FhirWorksAuthzRBACGitHubBranch=$FhirWorksAuthzRBACGitHubBranch"
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch && yarn install && yarn add --dev jest-junit && yarn run test)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksAuthzRBACGitHubRepo.git && cd $FhirWorksAuthzRBACGitHubRepo && git checkout $FhirWorksAuthzRBACGitHubBranch && yarn install && yarn run test)
         - echo "FhirWorksRoutingGitHubRepo=$FhirWorksRoutingGitHubRepo - FhirWorksRoutingGitHubBranch=$FhirWorksRoutingGitHubBranch"
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch && yarn install && yarn add --dev jest-junit && yarn run test)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksRoutingGitHubRepo.git && cd $FhirWorksRoutingGitHubRepo && git checkout $FhirWorksRoutingGitHubBranch && yarn install && yarn run test)
         - echo "FhirWorksSearchESGitHubRepo=$FhirWorksSearchESGitHubRepo - FhirWorksSearchESGitHubBranch=$FhirWorksSearchESGitHubBranch"
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch && yarn install && yarn add --dev jest-junit && yarn run test)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksSearchESGitHubRepo.git && cd $FhirWorksSearchESGitHubRepo && git checkout $FhirWorksSearchESGitHubBranch && yarn install && yarn run test)
         - echo "FhirWorksPersistenceDDBGitHubRepo=$FhirWorksPersistenceDDBGitHubRepo - FhirWorksPersistenceDDBGitHubBranch=$FhirWorksPersistenceDDBGitHubBranch"
-        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch && yarn install && yarn add --dev jest-junit && yarn run test)
+        - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksPersistenceDDBGitHubRepo.git && cd $FhirWorksPersistenceDDBGitHubRepo && git checkout $FhirWorksPersistenceDDBGitHubBranch && yarn install && yarn run test)
 
         - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - tar -cvzf fhirworks.tgz $PACKAGE
