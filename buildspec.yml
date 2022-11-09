@@ -40,7 +40,7 @@ reports:
   # By changing the name the binding can easily get broken see "!Join [ '-', [!Ref FhirWorksCodeBuild, !Ref FhirWorksTestReportGroupName]]" of FhirWorksCodeBuildReportGroup inside fhirworks-pipeline.yml 
   # https://docs.aws.amazon.com/codebuild/latest/userguide/test-report-group-naming.html
   # https://docs.aws.amazon.com/codebuild/latest/userguide/report-group-create.html
-  fhir_works_test_report: 
+  cdh_test_report: 
     files:
      - fhir-works-on-aws-interface-reports.xml
     base-directory: ./test-reports
