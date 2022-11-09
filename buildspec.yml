@@ -44,5 +44,9 @@ reports:
   fhir_works_test_report: 
     files:
      - fhir-works-on-aws-interface-reports.xml
+     - fhir-works-on-aws-persistence-ddb-reports.xml
+     - fhir-works-on-aws-routing-reports.xml
+     - fhir-works-on-aws-authz-rbac-reports.xml
+     - fhir-works-on-aws-search-es-reports.xml
     base-directory: ../fhirworks/test-reports
     file-format: JUNITXML
