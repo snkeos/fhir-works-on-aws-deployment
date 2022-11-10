@@ -27,9 +27,18 @@ phases:
           SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.log | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"
           aws ssm put-parameter --name "$STAGE_NAME-fhirworks-url" --value "$SERVICE_ENDPOINT" --type "String" --overwrite
           echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
-        - yarn run test
 
 artifacts:
   files:
     - fhirworks/fhir-works-on-aws-deployment/Info_Output.log
     - fw-deploy-output.json
+
+reports:
+  # Binding via weak naming convention: This name is part of the ReportGroup Name, being created in the fhirworks-pipeline
+  # By changing the name the binding can easily get broken see "!Join [ '-', [!Ref FhirWorksCodeBuild, !Ref FhirWorksTestReportGroupName]]" of FhirWorksCodeBuildReportGroup inside fhirworks-pipeline.yml 
+  # https://docs.aws.amazon.com/codebuild/latest/userguide/test-report-group-naming.html
+  # https://docs.aws.amazon.com/codebuild/latest/userguide/report-group-create.html
+  fhir_works_test_report: 
+    files:
+     - fhir-works-on-aws-deployment-reports.xml
+    file-format: JUNITXML
