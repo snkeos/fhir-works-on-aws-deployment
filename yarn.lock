@@ -6241,97 +6241,25 @@ fecha@^4.2.0:
   resolved "https://registry.yarnpkg.com/fecha/-/fecha-4.2.1.tgz#0a83ad8f86ef62a091e22bb5a039cd03d23eecce"
   integrity sha512-MMMQ0ludy/nBs1/o0zVOiKTpG7qMbonKUzjJgQFEuvq6INZ1OraKPRAWkBq5vlKLOUMpmNYG1JoN3oDPUQ9m3Q==
 
-fhir-works-on-aws-authz-rbac@5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-authz-rbac/-/fhir-works-on-aws-authz-rbac-5.0.0.tgz#93d60930f0601e9be72de55c6ce23976230d0519"
-  integrity sha512-ZYy5A1aHU2xFBDTEtHSYdj8dA7vvbB3vD2wu0+ttGX5iOnV1J8EeTGX+kXtVky/nlm43qKrPxb5RbPHIUJiQWg==
-  dependencies:
-    fhir-works-on-aws-interface "^10.0.0"
-    jsonwebtoken "^8.5.1"
-    lodash "^4.17.20"
+"fhir-works-on-aws-authz-rbac@link:../fhir-works-on-aws-authz-rbac":
+  version "0.0.0"
+  uid ""
 
-fhir-works-on-aws-interface@12.0.0, fhir-works-on-aws-interface@^12.0.0:
-  version "12.0.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-interface/-/fhir-works-on-aws-interface-12.0.0.tgz#3e9149ab953c5d3fd27bc8bb63b92e541057697f"
-  integrity sha512-gr5vFyEyktPgL6XPOTcbRqTQxOdJgB0QF8+q6nvto+hoAi30SH5YIYoJnsnX2ZM1ECnkSSeakMK2RbAVM6nImg==
-  dependencies:
-    winston "^3.3.3"
-    winston-transport "^4.4.0"
+"fhir-works-on-aws-interface@link:../fhir-works-on-aws-interface":
+  version "0.0.0"
+  uid ""
 
-fhir-works-on-aws-interface@^10.0.0:
-  version "10.0.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-interface/-/fhir-works-on-aws-interface-10.0.0.tgz#5ad0599e55b40c7be1f9ef0cf9252d6da1f8d20a"
-  integrity sha512-JQ/eICquJlI5P6s7e1xiuABnPuhh4d7VeyPFc5OFHgpLbyBCTrbyz0gVMc3BdlQVXQ7IAa0HYgjNsLMoeFt2JA==
-  dependencies:
-    winston "^3.3.3"
-    winston-transport "^4.4.0"
+"fhir-works-on-aws-persistence-ddb@link:../fhir-works-on-aws-persistence-ddb":
+  version "0.0.0"
+  uid ""
 
-fhir-works-on-aws-interface@^12.1.0:
-  version "12.1.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-interface/-/fhir-works-on-aws-interface-12.1.0.tgz#74ff054cdf22eae0122c9ec32562475bcdd2cccf"
-  integrity sha512-LYbmbNz+CzPvH0QH+Sn8zEFzdfSUDd17hC5xjbMrxHOzQSuNEpIELbQ/rdtiNXc+V3xFsQubYsXoHl69wHZN3w==
-  dependencies:
-    winston "^3.3.3"
-    winston-transport "^4.4.0"
+"fhir-works-on-aws-routing@link:../fhir-works-on-aws-routing":
+  version "0.0.0"
+  uid ""
 
-fhir-works-on-aws-persistence-ddb@3.11.0:
-  version "3.11.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-persistence-ddb/-/fhir-works-on-aws-persistence-ddb-3.11.0.tgz#517d3039cc0f09ade43d5768cf28e3a731067067"
-  integrity sha512-UIEyBuCxR1XfuMrNyzVbq/LGJg2uDJrNFa3R4USt0lMomP4ZlTDIu7s4n3/vvcEHgewFPmyzNqvfgzRdH7UJpg==
-  dependencies:
-    "@elastic/elasticsearch" "7.13.0"
-    "@types/aws-lambda" "^8.10.83"
-    aws-elasticsearch-connector "^8.2.0"
-    aws-sdk "^2.1000.0"
-    aws-xray-sdk "^3.3.3"
-    fhir-works-on-aws-interface "^12.1.0"
-    flat "^5.0.2"
-    lodash "^4.17.20"
-    mime-types "^2.1.26"
-    promise.allsettled "^1.0.2"
-    uuid "^3.4.0"
-
-fhir-works-on-aws-routing@6.5.0:
-  version "6.5.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-routing/-/fhir-works-on-aws-routing-6.5.0.tgz#98ed2e765b729337d3f932853140e97c7933313b"
-  integrity sha512-PBe09TZ+SsZ78GxgZDlZb7jXF0y2oAtZDveGvdfg/MRlATlYZLo2OBO+nBSIj4Ag6S92H3LGPV3mq+XFQjvhMQ==
-  dependencies:
-    "@types/cors" "^2.8.7"
-    "@types/express-serve-static-core" "^4.17.2"
-    ajv "^6.11.0"
-    ajv-errors "^1.0.1"
-    aws-sdk "^2.1000.0"
-    aws-xray-sdk "^3.3.3"
-    cors "^2.8.5"
-    errorhandler "^1.5.1"
-    express "^4.17.1"
-    fhir-works-on-aws-interface "^12.1.0"
-    flat "^5.0.0"
-    http-errors "^1.8.0"
-    lodash "^4.17.15"
-    mime-types "^2.1.26"
-    serverless-http "^2.3.1"
-    uuid "^3.4.0"
-
-fhir-works-on-aws-search-es@3.12.0:
-  version "3.12.0"
-  resolved "https://registry.yarnpkg.com/fhir-works-on-aws-search-es/-/fhir-works-on-aws-search-es-3.12.0.tgz#6d6164dcc43342a71d72a9b38149c8139214c5f4"
-  integrity sha512-XqeKXNfFrh+ZoAApy6Uk4y83Kf/xigAqbYvo01NLeUZx8a7JWTumt61l2IZAm9mu0LJIWOuv78XATagAuMDXJQ==
-  dependencies:
-    "@aws-sdk/client-sns" "^3.50.0"
-    "@aws-sdk/node-http-handler" "^3.52.0"
-    "@elastic/elasticsearch" "7.13"
-    "@types/aws-lambda" "^8.10.92"
-    aws-elasticsearch-connector "^8.2.0"
-    aws-sdk "^2.1072.0"
-    aws-xray-sdk "^3.3.4"
-    date-fns "^2.19.0"
-    fhir-works-on-aws-interface "^12.0.0"
-    flat "^5.0.2"
-    lodash "^4.17.20"
-    nearley "^2.20.0"
-    qs "^6.10.3"
-    uuid "^8.3.2"
+"fhir-works-on-aws-search-es@link:../fhir-works-on-aws-search-es":
+  version "0.0.0"
+  uid ""
 
 figgy-pudding@^3.5.1:
   version "3.5.2"
@@ -8084,6 +8012,16 @@ jest-jasmine2@^26.6.3:
     jest-util "^26.6.2"
     pretty-format "^26.6.2"
     throat "^5.0.0"
+
+jest-junit@^14.0.1:
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/jest-junit/-/jest-junit-14.0.1.tgz#5b357d6f5d333459585d628a24cd48b5bbc92ba2"
+  integrity sha512-h7/wwzPbllgpQhhVcRzRC76/cc89GlazThoV1fDxcALkf26IIlRsu/AcTG64f4nR2WPE3Cbd+i/sVf+NCUHrWQ==
+  dependencies:
+    mkdirp "^1.0.4"
+    strip-ansi "^6.0.1"
+    uuid "^8.3.2"
+    xml "^1.0.1"
 
 jest-leak-detector@^26.6.2:
   version "26.6.2"
@@ -11276,6 +11214,11 @@ serverless-offline@^8.2.0:
     velocityjs "^2.0.3"
     ws "^7.4.2"
 
+serverless-plugin-ifelse@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/serverless-plugin-ifelse/-/serverless-plugin-ifelse-1.0.7.tgz#8f98f25731499fda94d2996c581ef0635ef71fba"
+  integrity sha512-9OzcpsKOT50dO6WsGM0AiDbsN9TjH8zg/pLVOJlDjliSulWpP6Q5ceqp5zTM3eY/aAlYTq1/UBElKby6V+vZiQ==
+
 serverless-step-functions@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/serverless-step-functions/-/serverless-step-functions-3.1.1.tgz#32400368b1a7f9837648359f3ad6750ffb5edba4"
@@ -13142,6 +13085,11 @@ xml2js@0.4.19:
   dependencies:
     sax ">=0.6.0"
     xmlbuilder "~9.0.1"
+
+xml@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/xml/-/xml-1.0.1.tgz#78ba72020029c5bc87b8a81a3cfcd74b4a2fc1e5"
+  integrity sha512-huCv9IH9Tcf95zuYCsQraZtWnJvBtLVE0QHMOs8bWyZAFZNDcYjsPq1nEx8jKA9y+Beo9v+7OBPRisQTjinQMw==
 
 xmlbuilder@~9.0.1:
   version "9.0.7"
