@@ -128,6 +128,11 @@
       "<rootDir>/node_modules/"
     ]
   },
+  "jest-junit": {
+    "suiteName": "jest test reports",
+    "outputDirectory": "./../test-reports",
+    "outputName": "fhir-works-on-aws-deployment-reports.xml"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/awslabs/fhir-works-on-aws-deployment.git"

@@ -30,8 +30,6 @@ phases:
         - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - tar -cvzf fhirworks.tgz $PACKAGE
 
-        - yarn run test
-
 artifacts:
   files:
     - 'fhirworks.tgz'
