@@ -31,6 +31,10 @@ phases:
         - API_KEY=dummy && echo "API_KEY=$API_KEY"
         - API_AWS_REGION=$REGION && echo "API_AWS_REGION=$REGION"
         - COGNITO_CLIENT_ID=$CLIENT_ID && echo "COGNITO_CLIENT_ID=$CLIENT_ID"
+        - PACKAGE=../fhirworks
+        - mkdir $PACKAGE
+        - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
+        - (cd $PACKAGE/fhir-works-on-aws-deployment && yarn install)
         - yarn run int-test
 
 artifacts:
