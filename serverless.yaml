@@ -636,7 +636,10 @@ resources:
               - ServerSideEncryptionByDefault:
                   SSEAlgorithm: AES256
           PublicAccessBlockConfiguration:
-            BlockPublicAcls: false
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
           OwnershipControls:
             Rules:
               - ObjectOwnership: ObjectWriter
