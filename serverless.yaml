@@ -630,7 +630,7 @@ resources:
               - id: W35
                 reason: 'This is the logs bucket for access logs'
         Properties:
-          AccessControl: LogDeliveryWrite
+          #AccessControl: LogDeliveryWrite
           BucketEncryption:
             ServerSideEncryptionConfiguration:
               - ServerSideEncryptionByDefault:
@@ -640,6 +640,9 @@ resources:
             BlockPublicPolicy: true
             IgnorePublicAcls: true
             RestrictPublicBuckets: true
+          OwnershipControls:
+            Rules:
+              - ObjectOwnership: ObjectWriter
       FHIRBinaryBucketHttpsOnlyPolicy:
         Type: AWS::S3::BucketPolicy
         Properties:
