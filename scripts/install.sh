@@ -433,42 +433,42 @@ fi
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
 if [[ $hasExtUserPoolParameters  == true ]];  then
-    extUserPoolArgs=(--extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain)
+    extUserPoolArgs=(--param="extUserPoolId=$extUserPool" --param="extUserPoolClientId=$extUserPoolClient" --param="extUserPoolDomain=$extUserPoolDomain")
 else
     extUserPoolArgs=()
 fi
 if [[ "$stageType" != "" ]]; then
-    stageTypeArgs=(--stageType $stageType)
+    stageTypeArgs=(--param="stageType=$stageType")
 else
     stageTypeArgs=()
 fi
 
 if [[ $enableMultiTenancy == true ]]; then
-    mtArgs=(--enableMultiTenancy "true")
+    mtArgs=(--param="enableMultiTenancy=""true""") 
 
     if [[ "$tenantIdClaimPath" != "" ]]; then
-        mtArgs+=(--tenantIdClaimPath $tenantIdClaimPath)
+        mtArgs+=(--param="tenantIdClaimPath=$tenantIdClaimPath")
         if [[ "$tenantIdClaimValuePrefix" != "" ]]; then
-            mtArgs+=(--tenantIdClaimValuePrefix $tenantIdClaimValuePrefix)
+            mtArgs+=(--param="tenantIdClaimValuePrefix=$tenantIdClaimValuePrefix")
         fi
     fi
 
     if [[ "$grantAccessAllTenantsScope" != "" ]]; then
-        mtArgs+=(--grantAccessAllTenantsScope $grantAccessAllTenantsScope)
+        mtArgs+=(--param="grantAccessAllTenantsScope=$grantAccessAllTenantsScope")
     fi
 else
     mtArgs=()
 fi
 
 if [[ $corsOrigins  != "" ]];  then
-    corsOriginsArgs=(--corsOrigins $corsOrigins)
+    corsOriginsArgs=(--param="corsOrigins=$corsOrigins")
 else
     corsOriginsArgs=()
 fi
 
-useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
+useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
 
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
