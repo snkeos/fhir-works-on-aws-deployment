@@ -5,6 +5,8 @@
 
 service: fhir-service
 
+configValidationMode: warn
+
 custom:
   oldResourceTableName: 'resource-${self:custom.stage}'
   resourceTableName: 'resource-db-${self:custom.stage}'
