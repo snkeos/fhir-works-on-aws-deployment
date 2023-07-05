@@ -27,6 +27,10 @@ phases:
           SERVICE_ENDPOINT=$(grep 'ServiceEndpoint: ' fhirworks/fhir-works-on-aws-deployment/Info_Output.log | sed 's/^.*: //') && echo "SERVICE_ENDPOINT=$SERVICE_ENDPOINT"
           aws ssm put-parameter --name "$STAGE_NAME-fhirworks-url" --value "$SERVICE_ENDPOINT" --type "String" --overwrite
           echo "{ \"ServiceEndpoint\": \"$SERVICE_ENDPOINT\" }" > fw-deploy-output.json
+      finally: 
+        - ls -al 
+        - cd ./fhirworks/fhir-works-on-aws-deployment
+        - yarn run serverless doctor
 
 artifacts:
   files:
