@@ -467,6 +467,7 @@ else
 fi
 
 useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
+export SLS_DEBUG=*
 
 yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
