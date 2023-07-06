@@ -444,7 +444,7 @@ else
 fi
 
 if [[ $enableMultiTenancy == true ]]; then
-    mtArgs=(--param="enableMultiTenancy="true") 
+    mtArgs=(--param="enableMultiTenancy=\"true\"")
 
     if [[ "$tenantIdClaimPath" != "" ]]; then
         mtArgs+=(--param="tenantIdClaimPath=$tenantIdClaimPath")
