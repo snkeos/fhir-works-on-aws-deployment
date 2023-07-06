@@ -35,41 +35,41 @@ custom:
   useApiKeys: ${opt:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy with specific url cleanly
   serverlessIfElse:
-      # If grantAccessAllTenantsScope is defined, add it to the api gateway to allow passthrough
-      - If: '"${self:custom.grantAccessAllTenantsScope}" != ""'
-        Set:
-          functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
-          functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+    # If grantAccessAllTenantsScope is defined, add it to the api gateway to allow passthrough
+    - If: '"${self:custom.grantAccessAllTenantsScope}" != ""'
+      Set:
+        functions.fhirServer.events.0.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
+        functions.fhirServer.events.1.http.authorizer.scopes.3: "${self:custom.grantAccessAllTenantsScope}"
 
-      - If: '"${self:custom.enableMultiTenancy}" == "true" && "${self:custom.useTenantSpecificUrl}" == "true"'
-        Exclude:
-          - resources.extensions.ApiGatewayMethodMetadataGet
-        Set:
-          functions.fhirServer.events.0.http.path: '/tenant/{tenantId}/' 
-          functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
-          functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
-        ElseExclude:
-            - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
+    - If: '"${self:custom.enableMultiTenancy}" == "true" && "${self:custom.useTenantSpecificUrl}" == "true"'
+      Exclude:
+        - resources.extensions.ApiGatewayMethodMetadataGet
+      Set:
+        functions.fhirServer.events.0.http.path: '/tenant/{tenantId}/' 
+        functions.fhirServer.events.1.http.path: '/tenant/{tenantId}/{proxy+}' 
+        functions.fhirServer.events.2.http.path: /tenant/{tenantId}/metadata
+      ElseExclude:
+          - resources.extensions.ApiGatewayMethodTenantTenantidVarMetadataGet
 
-      - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useTenantSpecificUrl}" == "true" && "${self:custom.enableMultiTenancy}" == "true"'          
-        Set:
-          functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
-          functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
-          functions.fhirServer.events.5.http.path: /tenant/{tenantId}/metadata
+    - If: '"${self:custom.corsOrigins}" != "" && "${self:custom.useTenantSpecificUrl}" == "true" && "${self:custom.enableMultiTenancy}" == "true"'          
+      Set:
+        functions.fhirServer.events.3.http.path: '/tenant/{tenantId}/' 
+        functions.fhirServer.events.4.http.path: '/tenant/{tenantId}/{proxy+}' 
+        functions.fhirServer.events.5.http.path: /tenant/{tenantId}/metadata
 
-      - If: '"${self:custom.corsOrigins}" == ""'
-        Exclude:
-          - functions.fhirServer.events.3 
-          - functions.fhirServer.events.4
-          - functions.fhirServer.events.5 
+    - If: '"${self:custom.corsOrigins}" == ""'
+      Exclude:
+        - functions.fhirServer.events.3 
+        - functions.fhirServer.events.4
+        - functions.fhirServer.events.5 
 
-      - If: '"${self:custom.useApiKeys}" == "false"'
-        Exclude:
-          - provider.apiKeys
-        Set:
-          functions.fhirServer.events.0.http.private: false
-          functions.fhirServer.events.1.http.private: false
-          functions.fhirServer.events.2.http.private: false
+    - If: '"${self:custom.useApiKeys}" == "false"'
+      Exclude:
+        - provider.apiKeys
+      Set:
+        functions.fhirServer.events.0.http.private: false
+        functions.fhirServer.events.1.http.private: false
+        functions.fhirServer.events.2.http.private: false
 
   bundle:
     packager: yarn
