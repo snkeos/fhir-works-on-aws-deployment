@@ -433,40 +433,40 @@ fi
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
 if [[ $hasExtUserPoolParameters  == true ]];  then
-    extUserPoolArgs=(--param="extUserPoolId=$extUserPool" --param="extUserPoolClientId=$extUserPoolClient" --param="extUserPoolDomain=$extUserPoolDomain")
+    extUserPoolArgs=(--param=\"extUserPoolId=$extUserPool\" --param=\"extUserPoolClientId=$extUserPoolClient\" --param=\"extUserPoolDomain=$extUserPoolDomain\")
 else
     extUserPoolArgs=()
 fi
 if [[ "$stageType" != "" ]]; then
-    stageTypeArgs=(--param="stageType=$stageType")
+    stageTypeArgs=(--param=\"stageType=$stageType\")
 else
     stageTypeArgs=()
 fi
 
 if [[ $enableMultiTenancy == true ]]; then
-    mtArgs=(--param="enableMultiTenancy=""true""") 
+    mtArgs=(--param=\"enableMultiTenancy=\"true\") 
 
     if [[ "$tenantIdClaimPath" != "" ]]; then
-        mtArgs+=(--param="tenantIdClaimPath=$tenantIdClaimPath")
+        mtArgs+=(--param=\"tenantIdClaimPath=$tenantIdClaimPath\")
         if [[ "$tenantIdClaimValuePrefix" != "" ]]; then
-            mtArgs+=(--param="tenantIdClaimValuePrefix=$tenantIdClaimValuePrefix")
+            mtArgs+=(--param=\"tenantIdClaimValuePrefix=$tenantIdClaimValuePrefix\")
         fi
     fi
 
     if [[ "$grantAccessAllTenantsScope" != "" ]]; then
-        mtArgs+=(--param="grantAccessAllTenantsScope=$grantAccessAllTenantsScope")
+        mtArgs+=(--param=\"grantAccessAllTenantsScope=$grantAccessAllTenantsScope\")
     fi
 else
     mtArgs=()
 fi
 
 if [[ $corsOrigins  != "" ]];  then
-    corsOriginsArgs=(--param="corsOrigins=$corsOrigins")
+    corsOriginsArgs=(--param=\"corsOrigins=$corsOrigins\")
 else
     corsOriginsArgs=()
 fi
 
-useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
+useApiKeysArgs=(--param=\"useApiKeys=$apiKeysEnabled\")
 yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
