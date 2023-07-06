@@ -13,26 +13,26 @@ custom:
   exportRequestTableName: 'export-request-${self:custom.stage}'
   exportRequestTableJobStatusIndex: 'jobStatus-index'
   stage: ${opt:stage, self:provider.stage}
-  stageType: ${opt:stageType, ""}
+  stageType: ${param:stageType, ""}
   region: ${opt:region, self:provider.region}
   oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
   useHapiValidator: ${opt:useHapiValidator, 'false'}
-  enableMultiTenancy: ${opt:enableMultiTenancy, 'false'}
+  enableMultiTenancy: ${param:enableMultiTenancy, 'false'}
   useTenantSpecificUrl: ${opt:useTenantSpecificUrl, 'true'}
-  tenantIdClaimPath: ${opt:tenantIdClaimPath, ""}
-  tenantIdClaimValuePrefix: ${opt:tenantIdClaimValuePrefix, ""}
-  grantAccessAllTenantsScope: ${opt:grantAccessAllTenantsScope, ""}
+  tenantIdClaimPath: ${param:tenantIdClaimPath, ""}
+  tenantIdClaimValuePrefix: ${param:tenantIdClaimValuePrefix, ""}
+  grantAccessAllTenantsScope: ${param:grantAccessAllTenantsScope, ""}
   enableSubscriptions: ${opt:enableSubscriptions, 'false'}
   logLevel: ${opt:logLevel, 'error'}
   enableESHardDelete: ${opt:enableESHardDelete, 'false'}
   patientCompartmentFileV3: 'patientCompartmentSearchParams.3.0.2.json'
   patientCompartmentFileV4: 'patientCompartmentSearchParams.4.0.1.json'
-  extUserPoolId: ${opt:extUserPoolId, ""}
-  extUserPoolClientId: ${opt:extUserPoolClientId, ""}
-  extUserPoolDomain: ${opt:extUserPoolDomain, ""}
-  corsOrigins: ${opt:corsOrigins, ""}
-  useApiKeys: ${opt:useApiKeys, "true"}
+  extUserPoolId: ${param:extUserPoolId, ""}
+  extUserPoolClientId: ${param:extUserPoolClientId, ""}
+  extUserPoolDomain: ${param:extUserPoolDomain, ""}
+  corsOrigins: ${param:corsOrigins, ""}
+  useApiKeys: ${param:useApiKeys, "true"}
   # serverlessIfElse: Helps to configure the API Gateway in order to support multi tenancy with specific url cleanly
   serverlessIfElse:
     # If grantAccessAllTenantsScope is defined, add it to the api gateway to allow passthrough
