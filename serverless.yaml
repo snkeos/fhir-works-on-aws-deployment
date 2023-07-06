@@ -15,17 +15,17 @@ custom:
   stage: ${opt:stage, self:provider.stage}
   stageType: ${param:stageType, ""}
   region: ${opt:region, self:provider.region}
-  oauthRedirect: ${opt:oauthRedirect, 'http://localhost'}
+  oauthRedirect: ${param:oauthRedirect, 'http://localhost'}
   config: ${file(serverless_config.json)}
-  useHapiValidator: ${opt:useHapiValidator, 'false'}
+  useHapiValidator: ${param:useHapiValidator, 'false'}
   enableMultiTenancy: ${param:enableMultiTenancy, 'false'}
-  useTenantSpecificUrl: ${opt:useTenantSpecificUrl, 'true'}
+  useTenantSpecificUrl: ${param:useTenantSpecificUrl, 'true'}
   tenantIdClaimPath: ${param:tenantIdClaimPath, ""}
   tenantIdClaimValuePrefix: ${param:tenantIdClaimValuePrefix, ""}
   grantAccessAllTenantsScope: ${param:grantAccessAllTenantsScope, ""}
-  enableSubscriptions: ${opt:enableSubscriptions, 'false'}
-  logLevel: ${opt:logLevel, 'error'}
-  enableESHardDelete: ${opt:enableESHardDelete, 'false'}
+  enableSubscriptions: ${param:enableSubscriptions, 'false'}
+  logLevel: ${param:logLevel, 'error'}
+  enableESHardDelete: ${param:enableESHardDelete, 'false'}
   patientCompartmentFileV3: 'patientCompartmentSearchParams.3.0.2.json'
   patientCompartmentFileV4: 'patientCompartmentSearchParams.4.0.1.json'
   extUserPoolId: ${param:extUserPoolId, ""}
