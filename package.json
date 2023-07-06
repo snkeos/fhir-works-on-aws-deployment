@@ -27,11 +27,10 @@
     "clean": "rm -rf build/* node_modules/* dist/* .serverless/* .nyc_output/*",
     "local": "node .",
     "compile-igs": "ts-node scripts/compile-igs.ts",
-    "serverless-deploy": "SLS_DEBUG=* serverless deploy",
+    "serverless-deploy": "serverless deploy",
     "serverless-package": "serverless package",
     "serverless-remove": "serverless remove",
-    "serverless-info": "serverless info", 
-    "serverless-doctor": "serverless doctor"
+    "serverless-info": "serverless info"
   },
   "dependencies": {
     "@types/aws-lambda": "^8.10.92",

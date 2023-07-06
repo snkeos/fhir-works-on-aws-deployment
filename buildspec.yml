@@ -14,7 +14,7 @@ phases:
 
         - mkdir $PACKAGE
         - mkdir -p $PACKAGE/fhir-works-on-aws-deployment && cp -r . $PACKAGE/fhir-works-on-aws-deployment
-        - export SLS_DEBUG=*
+
         - echo "PACKAGE=$PACKAGE"
         - echo "FhirWorksInterfaceGitHubRepo=$FhirWorksInterfaceGitHubRepo - FhirWorksInterfaceGitHubBranch=$FhirWorksInterfaceGitHubBranch"
         - (cd $PACKAGE && git clone https://github.com/snkeos/$FhirWorksInterfaceGitHubRepo.git && cd $FhirWorksInterfaceGitHubRepo && git checkout $FhirWorksInterfaceGitHubBranch && yarn install && yarn run test)
