@@ -467,7 +467,7 @@ else
 fi
 
 useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
-yarn run serverless deploy --region $region --stage $stage "$stageTypeArgs" "$extUserPoolArgs" "$mtArgs" "$corsOriginsArgs" "$useApiKeysArgs" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}""${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
