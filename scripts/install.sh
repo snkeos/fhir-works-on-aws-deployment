@@ -434,6 +434,8 @@ echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
 if [[ $hasExtUserPoolParameters  == true ]];  then
     extUserPoolArgs=(--param="extUserPoolId=$extUserPool" --param="extUserPoolClientId=$extUserPoolClient" --param="extUserPoolDomain=$extUserPoolDomain")
+    UserPoolId=$extUserPool
+    UserPoolAppClientId=$extUserPoolClient
 else
     extUserPoolArgs=()
 fi
@@ -476,10 +478,7 @@ touch Info_Output.yml
 SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.log
 
 #Read in variables from Info_Output.log
-echo "Checking Info_Output.log"
-cat Info_Output.log
 eval $( parse_log Info_Output.log )
-
 
 ## Cognito Init
 cd ${PACKAGE_ROOT}/scripts
