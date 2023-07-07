@@ -65,7 +65,7 @@ custom:
 
     - If: '"${self:custom.useApiKeys}" == "false"'
       Exclude:
-        - provider.apiKeys
+        - provider.apiGateway.apiKeys
       Set:
         functions.fhirServer.events.0.http.private: false
         functions.fhirServer.events.1.http.private: false
