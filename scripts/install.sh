@@ -467,7 +467,7 @@ else
 fi
 
 useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
-yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" --verbose || { echo >&2 "Failed to deploy serverless application."; exit 1; }
+yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
 echo -e "Deployed Successfully.\n"
@@ -476,6 +476,8 @@ touch Info_Output.yml
 SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}"  "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" | tee Info_Output.log
 
 #Read in variables from Info_Output.log
+echo "Checking Info_Output.log"
+cat Info_Output.log
 eval $( parse_log Info_Output.log )
 
 

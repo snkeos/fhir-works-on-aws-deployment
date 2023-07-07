@@ -150,7 +150,6 @@ functions:
               - 'openid'
               - 'profile'
               - 'aws.cognito.signin.user.admin'
-
           method: ANY
           path: /
           private: true
@@ -162,7 +161,6 @@ functions:
               - 'openid'
               - 'profile'
               - 'aws.cognito.signin.user.admin'
-
           method: ANY
           path: '{proxy+}'
           private: true
@@ -178,7 +176,6 @@ functions:
       - http:
           method: OPTIONS
           path: /metadata
-      
     handler: src/index.handler
     provisionedConcurrency: 5
     environment:
