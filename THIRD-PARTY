@@ -6376,7 +6376,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************
 
 serverless-http
-2.7.0 <https://github.com/dougmoscrop/serverless-http>
+3.2.0 <https://github.com/dougmoscrop/serverless-http>
 The MIT License (MIT)
 
 Copyright (c) 2016 Doug Moscrop

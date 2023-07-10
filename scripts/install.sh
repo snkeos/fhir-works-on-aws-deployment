@@ -91,6 +91,7 @@ function install_dependencies(){
         sudo $PKG_MANAGER upgrade -y
 
         #Yarn depends on node version >= 12.0.0
+        #AWS Lambda support only node version >=14.0.0 
         if [ "$basepkg" == "apt-get" ]; then
             curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
             sudo apt-get --assume-yes install nodejs -y
@@ -119,7 +120,7 @@ function install_dependencies(){
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         #sudo -u $SUDO_USER removes brew's error message that brew should not be run as 'sudo'
         type -a brew 2>&1 || { error_msg="ERROR: brew is required to install packages."; return 1; }
-        sudo -u $SUDO_USER brew install node@12
+        sudo -u $SUDO_USER brew install node@14
         sudo -u $SUDO_USER brew install python3
         sudo npm install --global yarn@1.22.5
         sudo pip3 install boto3
@@ -432,41 +433,42 @@ fi
 echo -e "\n\nFHIR Works is deploying. A fresh install will take ~20 mins\n\n"
 ## Deploy to stated region
 if [[ $hasExtUserPoolParameters  == true ]];  then
-    extUserPoolArgs=(--extUserPoolId $extUserPool --extUserPoolClientId $extUserPoolClient --extUserPoolDomain $extUserPoolDomain)
+    extUserPoolArgs=(--param="extUserPoolId=$extUserPool" --param="extUserPoolClientId=$extUserPoolClient" --param="extUserPoolDomain=$extUserPoolDomain")
+    UserPoolId=$extUserPool
+    UserPoolAppClientId=$extUserPoolClient
 else
     extUserPoolArgs=()
 fi
 if [[ "$stageType" != "" ]]; then
-    stageTypeArgs=(--stageType $stageType)
+    stageTypeArgs=(--param="stageType=$stageType")
 else
     stageTypeArgs=()
 fi
 
 if [[ $enableMultiTenancy == true ]]; then
-    mtArgs=(--enableMultiTenancy "true")
+    mtArgs=(--param="enableMultiTenancy=true")
 
     if [[ "$tenantIdClaimPath" != "" ]]; then
-        mtArgs+=(--tenantIdClaimPath $tenantIdClaimPath)
+        mtArgs+=(--param="tenantIdClaimPath=$tenantIdClaimPath")
         if [[ "$tenantIdClaimValuePrefix" != "" ]]; then
-            mtArgs+=(--tenantIdClaimValuePrefix $tenantIdClaimValuePrefix)
+            mtArgs+=(--param="tenantIdClaimValuePrefix=$tenantIdClaimValuePrefix")
         fi
     fi
 
     if [[ "$grantAccessAllTenantsScope" != "" ]]; then
-        mtArgs+=(--grantAccessAllTenantsScope $grantAccessAllTenantsScope)
+        mtArgs+=(--param="grantAccessAllTenantsScope=$grantAccessAllTenantsScope")
     fi
 else
     mtArgs=()
 fi
 
 if [[ $corsOrigins  != "" ]];  then
-    corsOriginsArgs=(--corsOrigins $corsOrigins)
+    corsOriginsArgs=(--param="corsOrigins=$corsOrigins")
 else
     corsOriginsArgs=()
 fi
 
-useApiKeysArgs=(--useApiKeys $apiKeysEnabled)
-
+useApiKeysArgs=(--param="useApiKeys=$apiKeysEnabled")
 yarn run serverless deploy --region $region --stage $stage "${stageTypeArgs[@]}" "${extUserPoolArgs[@]}" "${mtArgs[@]}" "${corsOriginsArgs[@]}" "${useApiKeysArgs[@]}" || { echo >&2 "Failed to deploy serverless application."; exit 1; }
 
 ## Output to console and to file Info_Output.log.  tee not used as it removes the output highlighting.
@@ -477,7 +479,6 @@ SLS_DEPRECATION_DISABLE=* yarn run serverless info --verbose --region $region --
 
 #Read in variables from Info_Output.log
 eval $( parse_log Info_Output.log )
-
 
 ## Cognito Init
 cd ${PACKAGE_ROOT}/scripts
