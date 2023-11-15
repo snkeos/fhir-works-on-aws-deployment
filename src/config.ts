@@ -17,6 +17,7 @@ import {
     DynamoDb,
     DynamoDbDataService,
     DynamoDbBundleService,
+    HybridDataService,
     S3DataService,
     DynamoDbUtil,
 } from 'fhir-works-on-aws-persistence-ddb';
@@ -48,6 +49,8 @@ const dynamoDbBundleService = new DynamoDbBundleService(DynamoDb, undefined, und
     enableMultiTenancy,
 });
 
+const hybridDataService = new HybridDataService(dynamoDbDataService, { enableMultiTenancy });
+
 // Configure the input validators. Validators run in the order that they appear on the array. Use an empty array to disable input validation.
 const validators: Validator[] = [];
 if (process.env.VALIDATOR_LAMBDA_ALIAS && process.env.VALIDATOR_LAMBDA_ALIAS !== '[object Object]') {
@@ -70,7 +73,7 @@ const esSearch = new ElasticSearchService(
             logicalOperator: 'AND',
         },
     ],
-    DynamoDbUtil.cleanItem,
+    HybridDataService.cleanItemAndCompose,
     fhirVersion,
     loadImplementationGuides('fhir-works-on-aws-search-es'),
     undefined,
@@ -129,7 +132,7 @@ export const getFhirConfig = async (): Promise<FhirConfig> => {
             genericResource: {
                 operations: ['create', 'read', 'update', 'delete', 'vread', 'search-type'],
                 fhirVersions: [fhirVersion],
-                persistence: dynamoDbDataService,
+                persistence: hybridDataService,
                 typeSearch: esSearch,
                 typeHistory: stubs.history,
             },
