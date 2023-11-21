@@ -50,16 +50,8 @@ const dynamoDbBundleService = new DynamoDbBundleService(DynamoDb, undefined, und
 });
 
 const hybridDataService = new HybridDataService(dynamoDbDataService, { enableMultiTenancy });
-hybridDataService.registerToStoreOnObjectStorage(`Questionnaire`, (resource: any): any => {
-    // eslint-disable-next-line no-param-reassign
-    delete resource.item;
-    return resource;
-});
-hybridDataService.registerToStoreOnObjectStorage(`QuestionnaireResponse`, (resource: any): any => {
-    // eslint-disable-next-line no-param-reassign
-    delete resource.item;
-    return resource;
-});
+hybridDataService.registerToStoreOnObjectStorage(`Questionnaire`, [`item`]);
+hybridDataService.registerToStoreOnObjectStorage(`QuestionnaireResponse`, [`item`]);
 
 // Configure the input validators. Validators run in the order that they appear on the array. Use an empty array to disable input validation.
 const validators: Validator[] = [];
