@@ -75,7 +75,7 @@ const esSearch = new ElasticSearchService(
             logicalOperator: 'AND',
         },
     ],
-    HybridDataService.cleanItemAndCompose,
+    DynamoDbUtil.cleanItem,
     fhirVersion,
     loadImplementationGuides('fhir-works-on-aws-search-es'),
     undefined,
