@@ -842,6 +842,14 @@ resources:
                       - 'sqs:SendMessage'
                     Resource:
                       - !GetAtt DdbToEsDLQ.Arn
+                  - Effect: Allow
+                    Action:
+                      - 's3:*Object'
+                      - 's3:ListBucket'
+                      - 's3:DeleteObjectVersion'
+                    Resource:
+                      - !GetAtt FHIRBinaryBucket.Arn
+                      - !Join ['', [!GetAtt FHIRBinaryBucket.Arn, '/*']]
             - PolicyName: 'KMSPolicy'
               PolicyDocument:
                 Version: '2012-10-17'
@@ -857,6 +865,7 @@ resources:
                       - 'kms:GenerateDataKey'
                       - 'kms:GenerateDataKeyWithoutPlaintext'
                     Resource:
+                      - !GetAtt S3KMSKey.Arn
                       - !GetAtt DynamodbKMSKey.Arn
                       - !GetAtt ElasticSearchKMSKey.Arn
 

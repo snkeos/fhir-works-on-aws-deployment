@@ -17,6 +17,7 @@ import {
     DynamoDb,
     DynamoDbDataService,
     DynamoDbBundleService,
+    HybridDataService,
     S3DataService,
     DynamoDbUtil,
 } from 'fhir-works-on-aws-persistence-ddb';
@@ -47,6 +48,10 @@ const dynamoDbDataService = new DynamoDbDataService(DynamoDb, false, { enableMul
 const dynamoDbBundleService = new DynamoDbBundleService(DynamoDb, undefined, undefined, {
     enableMultiTenancy,
 });
+
+const hybridDataService = new HybridDataService(dynamoDbDataService, { enableMultiTenancy });
+hybridDataService.registerToStoreOnObjectStorage(`Questionnaire`, [`item`]);
+hybridDataService.registerToStoreOnObjectStorage(`QuestionnaireResponse`, [`item`]);
 
 // Configure the input validators. Validators run in the order that they appear on the array. Use an empty array to disable input validation.
 const validators: Validator[] = [];
@@ -129,7 +134,7 @@ export const getFhirConfig = async (): Promise<FhirConfig> => {
             genericResource: {
                 operations: ['create', 'read', 'update', 'delete', 'vread', 'search-type'],
                 fhirVersions: [fhirVersion],
-                persistence: dynamoDbDataService,
+                persistence: hybridDataService,
                 typeSearch: esSearch,
                 typeHistory: stubs.history,
             },
