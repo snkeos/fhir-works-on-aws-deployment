@@ -91,6 +91,7 @@ provider:
   region: us-west-2
   stage: dev
   runtime: nodejs18.x
+  runtimeManagement: onFunctionUpdate
   architecture: x86_64
   memorySize: 512
   logRetentionInDays: 3653 # 10 years
@@ -1295,3 +1296,4 @@ plugins:
   - serverless-bundle
   - serverless-offline
   - serverless-plugin-ifelse
+  - ./.serverless_plugins/lambda-update-deprecated-runtime.js
