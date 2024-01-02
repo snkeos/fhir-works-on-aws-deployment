@@ -12,6 +12,8 @@ class LambdaUpdateDeprecatedRuntime {
     }
 
     afterCompileEvents() {
+        this.serverless.cli.log('LambdaUpdateDeprecatedRuntime');
+
         let key = 'CustomDashresourceDashapigwDashcwDashroleLambdaFunction';
         let resources = this.serverless.service.provider.compiledCloudFormationTemplate.Resources;
         if (
@@ -20,10 +22,10 @@ class LambdaUpdateDeprecatedRuntime {
                 resources[key].Properties.Runtime === 'nodejs14.x' ||
                 resources[key].Properties.Runtime === 'nodejs16.x') */
         ) {
-            this.serverless.cli.log(
-                'Fixed CustomDashresourceDashapigwDashcwDashroleLambdaFunction runtime to `nodejs18.x`',
-            );
             resources[key].Properties.Runtime = 'nodejs18.x';
+            this.serverless.cli.log(
+                'Fixed CustomDashresourceDashapigwDashcwDashroleLambdaFunction runtime to `nodejs18.x`' );
+           
         }
     }
 }
