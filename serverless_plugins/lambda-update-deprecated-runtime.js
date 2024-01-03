@@ -5,7 +5,7 @@ class LambdaUpdateDeprecatedRuntime {
         this.provider = 'aws';
 
         this.hooks = {
-            'after:deploy:compileEvents': this.afterCompileEvents.bind(this),
+            'before:deploy:deploy': this.afterCompileEvents.bind(this),
         };
         console.log('LambdaUpdateDeprecatedRuntime::cstor');
     }
