@@ -7,13 +7,13 @@ class LambdaUpdateDeprecatedRuntime {
         this.hooks = {
             'before:deploy:deploy': this.beforeDeploy.bind(this),
         };
-        console.log('LambdaUpdateDeprecatedRuntime::cstor');
     }
 
     beforeDeploy() {
         this.serverless.cli.log('LambdaUpdateDeprecatedRuntime::before:deploy:deploy');
 
         const key = 'CustomDashresourceDashapigwDashcwDashroleLambdaFunction';
+        // eslint-disable-next-line prefer-const
         let resources = this.serverless.service.provider.compiledCloudFormationTemplate.Resources;
         if (key in resources) {
             resources[key].Properties.Runtime = 'nodejs18.x';
