@@ -91,16 +91,16 @@ function install_dependencies(){
         sudo $PKG_MANAGER upgrade -y
 
         #Yarn depends on node version >= 12.0.0
-        #AWS Lambda support only node version >=14.0.0 
+        #AWS Lambda support only node version >=18.0.0 
         if [ "$basepkg" == "apt-get" ]; then
-            curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+            curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
             sudo apt-get --assume-yes install nodejs -y
         elif [ "$basepkg" == "yum" ]; then
             if [[ $KERNEL_RELEASE =~ amzn2.x86_64 ]]; then
-                curl -sL https://rpm.nodesource.com/setup_14.x | bash -
+                curl -sL https://rpm.nodesource.com/setup_18.x | bash -
                 yum install nodejs -y
             else
-                yum install nodejs14 -y
+                yum install nodejs18 -y
             fi
         fi
 
