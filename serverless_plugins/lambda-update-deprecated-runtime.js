@@ -18,10 +18,6 @@ class LambdaUpdateDeprecatedRuntime {
         if (key in resources) {
             resources[key].Properties.Runtime = 'nodejs18.x';
             this.serverless.cli.log('Fixed runtime to `nodejs18.x`');
-            resources[key].Properties.RuntimeManagementConfig = {
-                UpdateRuntimeOn: 'FunctionUpdate',
-            };
-            this.serverless.cli.log('Fixed RuntimeManagementConfig: `UpdateRuntimeOn` to `FunctionUpdate`');
         }
     }
 }
