@@ -1296,4 +1296,4 @@ plugins:
   - serverless-bundle
   - serverless-offline
   - serverless-plugin-ifelse
-  - ./serverless_plugins/lambda-update-deprecated-runtime.js
+  #- ./serverless_plugins/lambda-update-deprecated-runtime.js
