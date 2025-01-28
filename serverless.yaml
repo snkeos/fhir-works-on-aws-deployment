@@ -281,6 +281,12 @@ functions:
     environment:
       ELASTICSEARCH_DOMAIN_ENDPOINT: !Join ['', ['https://', !GetAtt ElasticSearchDomain.DomainEndpoint]]
       NUMBER_OF_SHARDS: !If [isDev, 1, 3] # 133 indices, one per resource types
+    vpc:
+      securityGroupIds:
+        - sg-0284c842a8a7173f7
+      subnetIds:
+        - subnet-0771970695b28d4d2
+        - subnet-08678bea53d30a486
 
   subscriptionReaper:
     timeout: 30
