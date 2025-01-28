@@ -1007,6 +1007,7 @@ resources:
                   - Effect: Allow
                     Action:
                       - ec2:CreateNetworkInterface
+                      - ec2:DescribeNetworkInterfaces
                     Resource:
                       - '*'
             - PolicyName: 'KMSPolicy'
