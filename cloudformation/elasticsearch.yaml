@@ -171,9 +171,9 @@ Resources:
           Enabled: true
       VPCOptions:
         SecurityGroupIds:
-          - subnet-08678bea53d30a486
-        SubnetIds:
           - sg-0688fd15ffae13476
+        SubnetIds:
+          - subnet-08678bea53d30a486
   UpdateSearchMappingsCustomResource:
     DependsOn: ElasticSearchDomain
     Type: AWS::CloudFormation::CustomResource
