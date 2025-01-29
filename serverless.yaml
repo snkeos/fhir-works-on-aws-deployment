@@ -1004,13 +1004,6 @@ resources:
                       - 'es:ESHttpHead'
                     Resource:
                       - !Join ['', [!GetAtt ElasticSearchDomain.Arn, '/*']]
-                  - Effect: Allow
-                    Action:
-                      - ec2:CreateNetworkInterface
-                      - ec2:DescribeNetworkInterfaces
-                      - ec2:DeleteNetworkInterface
-                    Resource:
-                      - '*'
             - PolicyName: 'KMSPolicy'
               PolicyDocument:
                 Version: '2012-10-17'
@@ -1027,6 +1020,8 @@ resources:
                       - 'kms:GenerateDataKeyWithoutPlaintext'
                     Resource:
                       - !GetAtt ElasticSearchKMSKey.Arn
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
       SubscriptionReaperRole:
         Type: AWS::IAM::Role
         Properties:
