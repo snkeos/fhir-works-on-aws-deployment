@@ -285,8 +285,8 @@ functions:
       securityGroupIds:
         - sg-0284c842a8a7173f7
       subnetIds:
-        - subnet-0771970695b28d4d2
-        - subnet-08678bea53d30a486
+        - subnet-0770037d32e1cc974
+        - subnet-0b62d78014d0ab6f0
 
   subscriptionReaper:
     timeout: 30
