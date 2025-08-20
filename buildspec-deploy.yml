@@ -3,7 +3,7 @@ version: 0.2
 phases:
     install:
       runtime-versions:
-        nodejs: 20.18.1
+        nodejs: 20.19.0
         python: 3.11
       commands:
         - npm install -g yarn
