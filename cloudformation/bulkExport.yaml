@@ -246,7 +246,7 @@ Resources:
         Statement:
           - Effect: 'Allow'
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              Service: 'lambda.amazonaws.com'
             Action: 'sts:AssumeRole'
       Policies:
         - PolicyName: s3Access
