@@ -88,6 +88,7 @@ custom:
 
 provider:
   name: aws
+  apiName: ${self:custom.stage}-fhir-service
   region: us-west-2
   stage: dev
   runtime: nodejs18.x
