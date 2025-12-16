@@ -122,7 +122,7 @@ Resources:
         DedicatedMasterCount: !If [isDev, !Ref AWS::NoValue, 3]
         DedicatedMasterType: !If [isDev, !Ref AWS::NoValue, !FindInMap [RegionMap, !Ref AWS::Region, smallEc2]]
         ZoneAwarenessEnabled: !If [isDev, false, true]
-      ElasticsearchVersion: 'OpenSearch_1.3'
+      ElasticsearchVersion: '7.10'
       EncryptionAtRestOptions:
         Enabled: true
         KmsKeyId: !Ref ElasticSearchKMSKey
