@@ -32,6 +32,7 @@
     "serverless-remove": "serverless remove",
     "serverless-info": "serverless info"
   },
+
   "dependencies": {
     "@types/aws-lambda": "8.10.119",
     "@aws-sdk/types": "3.862.0",
@@ -87,6 +88,7 @@
     "wait-for-expect": "3.0.2"
   },
   "resolutions": {
+    "@aws-sdk/types": "3.862.0",
     "tar": "^6.1.2",
     "simple-git": "^3.3.0",
     "dot-prop": "^5.1.1",

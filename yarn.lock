@@ -1751,34 +1751,12 @@
     "@smithy/types" "^4.3.2"
     tslib "^2.6.2"
 
-"@aws-sdk/types@3.267.0":
-  version "3.267.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/types/-/types-3.267.0.tgz#fe543d1a1977c4e9e7ca6c32c837fcfd87b32441"
-  integrity sha512-fICTbSeIfXlTHnciQgDt37R0kXoKxgh0a3prnLWVvTcmf7NFujdZmg5YTAZT3KJJ7SuKsIgnI8azBYioVY8BVQ==
-  dependencies:
-    tslib "^2.3.1"
-
-"@aws-sdk/types@3.357.0", "@aws-sdk/types@^3.222.0":
-  version "3.357.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/types/-/types-3.357.0.tgz#8491da71a4291cc2661c26a75089e86532b6a3b5"
-  integrity sha512-/riCRaXg3p71BeWnShrai0y0QTdXcouPSM0Cn1olZbzTf7s71aLEewrc96qFrL70XhY4XvnxMpqQh+r43XIL3g==
-  dependencies:
-    tslib "^2.5.0"
-
-"@aws-sdk/types@3.862.0":
+"@aws-sdk/types@3.267.0", "@aws-sdk/types@3.357.0", "@aws-sdk/types@3.862.0", "@aws-sdk/types@^3.222.0", "@aws-sdk/types@^3.4.1":
   version "3.862.0"
   resolved "https://registry.yarnpkg.com/@aws-sdk/types/-/types-3.862.0.tgz#2f5622e1aa3a5281d4f419f5d2c90f87dd5ff0cf"
   integrity sha512-Bei+RL0cDxxV+lW2UezLbCYYNeJm6Nzee0TpW0FfyTRBhH9C1XQh4+x+IClriXvgBnRquTMMYsmJfvx8iyLKrg==
   dependencies:
     "@smithy/types" "^4.3.2"
-    tslib "^2.6.2"
-
-"@aws-sdk/types@^3.4.1":
-  version "3.973.1"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/types/-/types-3.973.1.tgz#1b2992ec6c8380c3e74c9bd2c74703e9a807d6e0"
-  integrity sha512-DwHBiMNOB468JiX6+i34c+THsKHErYUdNQ3HexeXZvVn4zouLjgaS4FejiGSi2HyBuzuyHg7SuOPmjSvoU9NRg==
-  dependencies:
-    "@smithy/types" "^4.12.0"
     tslib "^2.6.2"
 
 "@aws-sdk/url-parser@3.267.0":
@@ -4934,13 +4912,6 @@
   integrity sha512-tMpkreknl2gRrniHeBtdgQwaOlo39df8RxSrwsHVNIGXULy5XP6KqgScUw2m12D15wnJCKWxVhCX+wbrBW/y7g==
   dependencies:
     tslib "^2.5.0"
-
-"@smithy/types@^4.12.0":
-  version "4.12.1"
-  resolved "https://registry.yarnpkg.com/@smithy/types/-/types-4.12.1.tgz#a123380692cea544f9f378694c9ec8c345d1017c"
-  integrity sha512-ow30Ze/DD02KH2p0eMyIF2+qJzGyNb0kFrnTRtPpuOkQ4hrgvLdaU4YC6r/K8aOrCML4FH0Cmm0aI4503L1Hwg==
-  dependencies:
-    tslib "^2.6.2"
 
 "@smithy/types@^4.3.2":
   version "4.3.2"
